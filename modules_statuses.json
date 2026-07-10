@@ -1,0 +1,12 @@
+{
+    "AccessControl": true,
+    "Mentors": true,
+    "Profile": true,
+    "Course": true,
+    "Batch": true,
+    "FrontendEditor": true,
+    "Reviews": true,
+    "Invoice": true,
+    "NewsUpdates": true,
+    "ContactMessages": true
+}

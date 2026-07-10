@@ -1,0 +1,11 @@
+{
+    "name": "NewsUpdates",
+    "alias": "newsupdates",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\NewsUpdates\\Providers\\NewsUpdatesServiceProvider"
+    ],
+    "files": []
+}

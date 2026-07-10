@@ -1,0 +1,28 @@
+{
+    "name": "nwidart/mentors",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Mentors\\": "app/",
+            "Modules\\Mentors\\Database\\Factories\\": "database/factories/",
+            "Modules\\Mentors\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Mentors\\Tests\\": "tests/"
+        }
+    }
+}

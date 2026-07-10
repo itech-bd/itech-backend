@@ -1,0 +1,11 @@
+{
+    "name": "FrontendEditor",
+    "alias": "frontendeditor",
+    "description": "Admin frontend page editor",
+    "keywords": ["cms", "frontend", "editor"],
+    "priority": 0,
+    "providers": [
+        "Modules\\FrontendEditor\\Providers\\FrontendEditorServiceProvider"
+    ],
+    "files": []
+}
