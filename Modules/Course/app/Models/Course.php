@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Modules\Batch\Models\Batch;
 // use Modules\Course\Database\Factories\CourseFactory;
@@ -147,7 +148,9 @@ class Course extends Model
             $normalized = Str::after($normalized, 'storage/');
         }
 
-        return Storage::disk('public')->url($normalized);
+        return Route::has('public.media')
+            ? route('public.media', ['path' => $normalized])
+            : Storage::disk('public')->url($normalized);
     }
 
     // protected static function newFactory(): CourseFactory

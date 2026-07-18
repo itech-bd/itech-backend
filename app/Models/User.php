@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use App\Notifications\VerifyEmailNotification;
 use Modules\Profile\Models\Address;
@@ -120,15 +121,11 @@ class User extends Authenticatable
             return null;
         }
 
-        /**
-         * @var \Illuminate\Filesystem\FilesystemAdapter $disk
-         */
-        $disk = Storage::disk('public');
-        if (!$disk->exists($path)) {
-            return null;
-        }
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
 
-        return $disk->url($path);
+        return Route::has('public.media')
+            ? route('public.media', ['path' => $normalized])
+            : Storage::disk('public')->url($normalized);
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\FrontendPage;
 use App\Models\FrontendSection;
 use App\Models\FrontendSetting;
 use App\Models\User;
+use App\Support\TextEncoding;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -54,8 +55,25 @@ class PublicSiteController extends ApiController
 
     public function home(): JsonResponse
     {
+        $today = now()->toDateString();
+
         $popularCourses = Schema::hasTable('courses')
             ? $this->activeCoursesQuery()->latest('id')->limit(8)->get()
+            : new Collection();
+
+        $ongoingBatches = Schema::hasTable('batches')
+            ? Batch::query()
+                ->with([
+                    'course:id,title,slug,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
+                    'mentors:id,name,email,profile_image',
+                ])
+                ->whereIn('status', ['upcoming', 'running'])
+                ->whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->orderByDesc('start_date')
+                ->orderByDesc('id')
+                ->limit(6)
+                ->get()
             : new Collection();
 
         $upcomingBatches = Schema::hasTable('batches')
@@ -64,7 +82,8 @@ class PublicSiteController extends ApiController
                     'course:id,title,slug,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
                     'mentors:id,name,email,profile_image',
                 ])
-                ->whereIn('status', ['upcoming', 'running'])
+                ->where('status', 'upcoming')
+                ->whereDate('start_date', '>', $today)
                 ->orderBy('start_date')
                 ->orderBy('id')
                 ->limit(6)
@@ -103,6 +122,7 @@ class PublicSiteController extends ApiController
                     'name' => $track,
                     'course_ids' => $courses->pluck('id')->values(),
                 ])->values(),
+            'ongoing_batches' => $ongoingBatches->map(fn (Batch $batch) => $this->batchPayload($batch))->values(),
             'upcoming_batches' => $upcomingBatches->map(fn (Batch $batch) => $this->batchPayload($batch))->values(),
             'mentors' => $mentors->map(fn (Mentor $mentor) => $this->mentorPayload($mentor))->values(),
             'reviews' => $reviews->map(fn (Review $review) => $this->reviewPayload($review))->values(),
@@ -533,7 +553,7 @@ class PublicSiteController extends ApiController
         $payload = [
             'id' => $course->id,
             'slug' => $course->slug,
-            'title' => $course->title,
+            'title' => TextEncoding::repairMojibake($course->title),
             'track' => $this->courseTrack($course),
             'thumbnail_url' => $course->thumbnail_url,
             'status' => $course->status,
@@ -549,7 +569,7 @@ class PublicSiteController extends ApiController
         ];
 
         if ($includeDescription) {
-            $payload['description'] = $course->description;
+            $payload['description'] = TextEncoding::repairMojibake($course->description);
         }
 
         if ($includeBatches) {
@@ -566,7 +586,7 @@ class PublicSiteController extends ApiController
         $payload = [
             'id' => $batch->id,
             'name' => $batch->name,
-            'status' => $batch->status,
+            'status' => $this->batchDisplayStatus($batch),
             'start_date' => $batch->start_date?->toDateString(),
             'end_date' => $batch->end_date?->toDateString(),
             'class_days' => $batch->class_days ?: [],
@@ -586,6 +606,21 @@ class PublicSiteController extends ApiController
         }
 
         return $payload;
+    }
+
+    private function batchDisplayStatus(Batch $batch): string
+    {
+        $today = now()->toDateString();
+
+        if ($batch->status === 'completed' || ($batch->end_date && $batch->end_date->toDateString() < $today)) {
+            return 'completed';
+        }
+
+        if ($batch->start_date && $batch->start_date->toDateString() <= $today) {
+            return 'running';
+        }
+
+        return 'upcoming';
     }
 
     private function mentorPayload(Mentor $mentor, bool $detailed = false): array

@@ -48,6 +48,13 @@ class TextEncoding
             'ï¸',
         ];
 
+        $markers = array_merge($markers, [
+            'à¦',
+            'à§',
+            'ðŸ',
+            'ï¸',
+        ]);
+
         $score = 0;
 
         foreach ($markers as $marker) {
