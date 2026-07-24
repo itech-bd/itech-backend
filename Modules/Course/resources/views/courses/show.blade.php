@@ -63,7 +63,7 @@
         </div>
     </x-slot>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
 
         {{-- Main content --}}
         <div class="space-y-5 lg:col-span-2">
@@ -143,14 +143,14 @@
             @endif
 
             {{-- Description --}}
-            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:flex lg:max-h-[calc(100vh-14rem)] lg:flex-col lg:overflow-hidden">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100">
                         <svg class="h-4 w-4 text-slate-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 0 1 2-2h4.586A2 2 0 0 1 12 2.586L15.414 6A2 2 0 0 1 16 7.414V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Zm2 6a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H7a1 1 0 0 1-1-1Zm1 3a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2H7Z" clip-rule="evenodd"/></svg>
                     </div>
                     <h3 class="text-sm font-semibold text-slate-700">Course Description</h3>
                 </div>
-                <div class="prose prose-slate max-w-none text-sm leading-relaxed">{!! $course->description !!}</div>
+                <div class="prose prose-slate min-h-0 max-w-none text-sm leading-relaxed lg:flex-1 lg:overflow-y-auto lg:pr-3">{!! $course->description !!}</div>
             </div>
         </div>
 

@@ -13,9 +13,9 @@
         </div>
     </x-slot>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[.85fr_1.15fr]">
-        <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
-            <div class="relative h-64 bg-gradient-to-br from-[#2E3192] via-[#20236f] to-[#151748]">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[.85fr_1.15fr] xl:items-start">
+        <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70 xl:flex xl:max-h-[calc(100vh-13rem)] xl:flex-col">
+            <div class="relative h-64 shrink-0 bg-gradient-to-br from-[#2E3192] via-[#20236f] to-[#151748]">
                 @if($course->thumbnail_url)
                     <img src="{{ $course->thumbnail_url }}" alt="{{ $course->title }}" class="h-full w-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/65 to-transparent"></div>
@@ -27,7 +27,7 @@
                     <h3 class="mt-3 text-2xl font-extrabold leading-tight">{{ $course->title }}</h3>
                 </div>
             </div>
-            <div class="p-6">
+            <div class="min-h-0 p-6 xl:flex-1 xl:overflow-y-auto xl:pr-3">
                 <div class="prose prose-sm max-w-none prose-headings:text-slate-950 prose-a:text-[#2E3192] prose-strong:text-slate-900">
                     {!! $course->description !!}
                 </div>

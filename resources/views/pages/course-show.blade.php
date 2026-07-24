@@ -49,10 +49,10 @@
     </section>
 
     <section class="py-12">
-        <div class="brand-container grid gap-8 lg:grid-cols-[1fr_360px]">
-            <div class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+        <div class="brand-container grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+            <div class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col lg:overflow-hidden lg:p-8">
                 <h2 class="text-2xl font-black text-slate-950">Course Overview</h2>
-                <div class="site-prose mt-4">
+                <div class="site-prose mt-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-3">
                     {!! $course->description !!}
                 </div>
             </div>
