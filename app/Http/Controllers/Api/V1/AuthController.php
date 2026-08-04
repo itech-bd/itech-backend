@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
@@ -120,6 +121,7 @@ class AuthController extends ApiController
         return $this->success([
             'token_type' => $token ? 'Bearer' : null,
             'access_token' => $token,
+            'login_handoff_url' => $this->loginHandoffUrl($user),
             'user' => $this->userPayload($user),
             'must_change_password' => (bool) $user->must_change_password,
         ], 'Login successful.');
@@ -256,6 +258,23 @@ class AuthController extends ApiController
     {
         return (bool) config('recaptcha.enabled')
             && ! (config('recaptcha.skip_in_testing') && app()->environment('testing'));
+    }
+
+    private function loginHandoffUrl(User $user): ?string
+    {
+        if (! $user->hasAnyRole(['admin', 'mentor'])) {
+            return null;
+        }
+
+        $token = Str::random(64);
+        Cache::put($this->loginHandoffCacheKey($token), $user->id, now()->addMinutes(2));
+
+        return route('auth.frontend-login-handoff', ['token' => $token]);
+    }
+
+    private function loginHandoffCacheKey(string $token): string
+    {
+        return 'frontend_login_handoff:'.$token;
     }
 
     private function userPayload(User $user, bool $includeProfile = false): array

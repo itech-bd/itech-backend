@@ -3,6 +3,7 @@
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PublicMediaController;
+use App\Http\Controllers\Auth\FrontendLoginHandoffController;
 use App\Http\Controllers\Admin\WysiwygUploadController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,10 @@ Route::get(
 Route::get('/media/{path}', [PublicMediaController::class, 'show'])
     ->where('path', '.*')
     ->name('public.media');
+
+Route::get('/login/handoff/{token}', FrontendLoginHandoffController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->name('auth.frontend-login-handoff');
 
 Route::middleware('frontend.locale')->group(
     function () {
