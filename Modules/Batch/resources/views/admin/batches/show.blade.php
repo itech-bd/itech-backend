@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $showEditBatchModal = request()->boolean('edit') || old('_batch_form') === 'edit';
+    @endphp
+
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
@@ -46,7 +50,7 @@
                     <a href="/dashboard/batches/{{ $batch->getRouteKey() }}/students" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Assign students</a>
                 @endcan
                 @can('editBatch')
-                    <a href="/dashboard/batches/{{ $batch->getRouteKey() }}/edit" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100">Change Status</a>
+                    <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'edit-batch' }))" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100">Change Status</button>
                 @endcan
             </div>
         </div>
@@ -85,4 +89,12 @@
             </div>
         </div>
     </div>
+
+    @can('editBatch')
+        @include('batch::admin.batches.partials.edit-modal', [
+            'modalName' => 'edit-batch',
+            'show' => $showEditBatchModal,
+            'batch' => $batch,
+        ])
+    @endcan
 </x-app-layout>

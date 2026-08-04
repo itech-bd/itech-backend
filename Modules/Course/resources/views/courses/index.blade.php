@@ -1,8 +1,4 @@
 <x-app-layout>
-    @php
-        $showCreateCourseModal = request()->boolean('create') || $errors->any();
-    @endphp
-
     <x-slot name="header">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -12,10 +8,10 @@
             </div>
 
             @can('addCourse')
-                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-course' }))" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#F47B20] px-4 py-2 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(244,123,32,.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d96816]">
+                <x-panel.action-link href="{{ route('dashboard.courses.create') }}" tone="orange">
                     <i class="fa-solid fa-plus"></i>
                     Add Course
-                </button>
+                </x-panel.action-link>
             @endcan
         </div>
     </x-slot>
@@ -47,26 +43,6 @@
             </table>
         </div>
     </div>
-
-    @can('addCourse')
-        <x-modal name="create-course" :show="$showCreateCourseModal" maxWidth="2xl" focusable>
-            <div class="max-h-[calc(100vh-6rem)] overflow-y-auto bg-white">
-                <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
-                    <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">New Course</p>
-                        <h3 class="mt-1 text-xl font-black text-slate-950">Create course</h3>
-                        <p class="mt-1 text-sm font-semibold text-slate-500">Add pricing, content and publishing status from here.</p>
-                    </div>
-                    <button type="button" onclick="window.dispatchEvent(new CustomEvent('close-modal', { detail: 'create-course' }))" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-800">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div class="px-6 py-5">
-                    @include('course::courses.partials.create-form', ['modalName' => 'create-course'])
-                </div>
-            </div>
-        </x-modal>
-    @endcan
 
     @push('scripts')
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

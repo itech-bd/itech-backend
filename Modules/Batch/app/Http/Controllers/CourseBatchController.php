@@ -42,6 +42,7 @@ class CourseBatchController extends Controller implements HasMiddleware
                     'name',
                     'class_days',
                     'class_time',
+                    'live_class_link',
                     'status',
                     'start_date',
                     'end_date',
@@ -74,7 +75,6 @@ class CourseBatchController extends Controller implements HasMiddleware
                     $user = Auth::user();
 
                     $viewUrl = route('dashboard.batches.show', $batch);
-                    $editUrl = route('dashboard.batches.edit', $batch);
                     $deleteUrl = route('dashboard.courses.batches.destroy', [$course, $batch]);
                     $scheduleUrl = route('dashboard.batches.schedules.index', $batch);
                     $mentorsUrl = route('dashboard.batches.mentors.edit', $batch);
@@ -84,7 +84,7 @@ class CourseBatchController extends Controller implements HasMiddleware
                         . '<a href="' . e($viewUrl) . '" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">View</a>';
 
                     if ($user && $user->can('editBatch')) {
-                        $buttons .= '<a href="' . e($editUrl) . '" class="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">Edit</a>';
+                        $buttons .= $this->renderEditButton($batch, $course);
                     }
 
                     if ($user && $user->can('assignMentorsToBatch')) {
@@ -192,5 +192,26 @@ class CourseBatchController extends Controller implements HasMiddleware
     private function assertBatchBelongsToCourse(Course $course, Batch $batch): void
     {
         abort_if($batch->course_id !== $course->id, 404);
+    }
+
+    private function renderEditButton(Batch $batch, Course $course): string
+    {
+        $days = array_values((array) ($batch->class_days ?? []));
+
+        return '<button type="button" '
+            . 'onclick="window.ItechBatchEditModal && window.ItechBatchEditModal.open(this)" '
+            . 'data-update-url="' . e(route('dashboard.batches.update', $batch)) . '" '
+            . 'data-batch-id="' . e($batch->getRouteKey()) . '" '
+            . 'data-course-title="' . e($course->title) . '" '
+            . 'data-name="' . e($batch->name) . '" '
+            . 'data-start-date="' . e(optional($batch->start_date)->format('Y-m-d') ?? '') . '" '
+            . 'data-end-date="' . e(optional($batch->end_date)->format('Y-m-d') ?? '') . '" '
+            . 'data-class-days="' . e(json_encode($days)) . '" '
+            . 'data-class-time="' . e($batch->class_time ?? '') . '" '
+            . 'data-live-class-link="' . e($batch->live_class_link ?? '') . '" '
+            . 'data-status="' . e($batch->status ?? 'upcoming') . '" '
+            . 'class="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">'
+            . 'Edit'
+            . '</button>';
     }
 }

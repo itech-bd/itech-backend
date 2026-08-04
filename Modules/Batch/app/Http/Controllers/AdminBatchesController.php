@@ -51,6 +51,7 @@ class AdminBatchesController extends Controller implements HasMiddleware
                     'name',
                     'class_days',
                     'class_time',
+                    'live_class_link',
                     'status',
                     'start_date',
                     'end_date',
@@ -89,9 +90,9 @@ class AdminBatchesController extends Controller implements HasMiddleware
                         $buttons .= '<a href="' . e($openUrl) . '" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Open</a>';
                     }
 
-                    $editUrl = route('dashboard.batches.edit', $batch);
-
-                    $buttons .= '<a href="' . e($editUrl) . '" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Edit</a>';
+                    if (request()->user() && request()->user()->can('editBatch')) {
+                        $buttons .= $this->renderEditButton($batch);
+                    }
 
                     $buttons .= '<a href="' . e($scheduleUrl) . '" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Schedule</a>'
                         . '<a href="' . e($mentorsUrl) . '" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Mentors</a>'
@@ -147,6 +148,27 @@ class AdminBatchesController extends Controller implements HasMiddleware
         return redirect()
             ->route('dashboard.batches.index')
             ->with('success', 'Batch created successfully.');
+    }
+
+    private function renderEditButton(Batch $batch): string
+    {
+        $days = array_values((array) ($batch->class_days ?? []));
+
+        return '<button type="button" '
+            . 'onclick="window.ItechBatchEditModal && window.ItechBatchEditModal.open(this)" '
+            . 'data-update-url="' . e(route('dashboard.batches.update', $batch)) . '" '
+            . 'data-batch-id="' . e($batch->getRouteKey()) . '" '
+            . 'data-course-title="' . e($batch->course?->title ?? '') . '" '
+            . 'data-name="' . e($batch->name) . '" '
+            . 'data-start-date="' . e(optional($batch->start_date)->format('Y-m-d') ?? '') . '" '
+            . 'data-end-date="' . e(optional($batch->end_date)->format('Y-m-d') ?? '') . '" '
+            . 'data-class-days="' . e(json_encode($days)) . '" '
+            . 'data-class-time="' . e($batch->class_time ?? '') . '" '
+            . 'data-live-class-link="' . e($batch->live_class_link ?? '') . '" '
+            . 'data-status="' . e($batch->status ?? 'upcoming') . '" '
+            . 'class="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">'
+            . 'Edit'
+            . '</button>';
     }
 }
 

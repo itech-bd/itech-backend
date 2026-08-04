@@ -41,10 +41,10 @@ class AdminBatchDetailsController extends Controller implements HasMiddleware
     {
         abort_unless(Gate::allows('update', $batch), 403);
 
-        $batch->load(['course:id,title']);
-        $course = $batch->course;
-
-        return view('batch::admin.batches.edit', compact('course', 'batch'));
+        return redirect()->route('dashboard.batches.show', [
+            'batch' => $batch,
+            'edit' => 1,
+        ]);
     }
 
     public function update(UpdateBatchRequest $request, Batch $batch)
@@ -62,6 +62,14 @@ class AdminBatchDetailsController extends Controller implements HasMiddleware
             'live_class_link' => $validated['live_class_link'] ?? null,
             'status' => $validated['status'],
         ]);
+
+        $redirectTo = (string) $request->input('redirect_to', '');
+
+        if (str_starts_with($redirectTo, '/dashboard/')) {
+            return redirect()
+                ->to($redirectTo)
+                ->with('success', 'Batch updated successfully');
+        }
 
         return redirect()
             ->route('dashboard.batches.show', $batch)

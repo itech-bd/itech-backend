@@ -2,7 +2,8 @@
     @php
         $activeStatus = $activeStatus ?? (string) request()->query('status', 'all');
         $courses = $courses ?? collect();
-        $showCreateBatchModal = request()->boolean('create') || $errors->any();
+        $showCreateBatchModal = request()->boolean('create') || old('_batch_form') === 'create';
+        $showEditBatchModal = old('_batch_form') === 'edit';
         $tabs = [
             'all' => ['label' => 'All', 'icon' => 'fa-solid fa-layer-group'],
             'upcoming' => ['label' => 'Upcoming', 'icon' => 'fa-regular fa-calendar-plus'],
@@ -95,6 +96,13 @@
                 </div>
             </div>
         </x-modal>
+    @endcan
+
+    @can('editBatch')
+        @include('batch::admin.batches.partials.edit-modal', [
+            'modalName' => 'edit-batch',
+            'show' => $showEditBatchModal,
+        ])
     @endcan
 
     @push('scripts')

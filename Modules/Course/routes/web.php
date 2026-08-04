@@ -5,12 +5,7 @@ use Modules\Course\Http\Controllers\CourseController;
 use Modules\Course\Http\Controllers\MyCoursesController;
 
 $adminCourseRoutes = static function (): void {
-    Route::get('courses/create', function () {
-        return redirect()->route('dashboard.courses.index', ['create' => 1]);
-    })->name('courses.create');
-
-    Route::resource('courses', CourseController::class)
-        ->except(['create']);
+    Route::resource('courses', CourseController::class);
 };
 
 $studentCoursesIndexAction = [MyCoursesController::class, 'index'];

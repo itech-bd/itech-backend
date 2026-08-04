@@ -14,6 +14,7 @@
 
 <form method="POST" action="{{ $formAction }}" class="space-y-5">
     @csrf
+    <input type="hidden" name="_batch_form" value="create">
 
     @if($includeCourseSelect)
         <div>

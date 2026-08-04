@@ -14,7 +14,7 @@
             }
         }
 
-        $showCreateBatchModal = request()->boolean('create') || $errors->any();
+        $showCreateBatchModal = request()->boolean('create') || old('_batch_form') === 'create';
     @endphp
 
     <x-slot name="header">

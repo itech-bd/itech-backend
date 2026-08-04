@@ -1,6 +1,7 @@
 <x-app-layout>
     @php
-        $showCreateBatchModal = request()->boolean('create') || $errors->any();
+        $showCreateBatchModal = request()->boolean('create') || old('_batch_form') === 'create';
+        $showEditBatchModal = old('_batch_form') === 'edit';
     @endphp
 
     <x-slot name="header">
@@ -76,6 +77,13 @@
                 </div>
             </div>
         </x-modal>
+    @endcan
+
+    @can('editBatch')
+        @include('batch::admin.batches.partials.edit-modal', [
+            'modalName' => 'edit-batch',
+            'show' => $showEditBatchModal,
+        ])
     @endcan
 
     @push('scripts')
