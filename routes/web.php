@@ -169,7 +169,7 @@ Route::get(
                 ->get();
 
             $quickLinks = [
-                ['label' => 'Create Course', 'href' => '/dashboard/courses/create', 'icon' => 'fa-solid fa-plus'],
+                ['label' => 'Create Course', 'href' => '/dashboard/courses?create=1', 'icon' => 'fa-solid fa-plus'],
                 ['label' => 'Manage Batches', 'href' => '/dashboard/batches', 'icon' => 'fa-solid fa-calendar-days'],
                 ['label' => 'Invoices', 'href' => '/dashboard/admin/invoices', 'icon' => 'fa-solid fa-receipt'],
                 ['label' => 'Frontend Editor', 'href' => '/admin/frontend-editor', 'icon' => 'fa-solid fa-pen-ruler'],

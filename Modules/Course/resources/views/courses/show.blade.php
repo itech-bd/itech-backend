@@ -13,6 +13,8 @@
                 $thumbUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($normalized);
             }
         }
+
+        $showCreateBatchModal = request()->boolean('create') || $errors->any();
     @endphp
 
     <x-slot name="header">
@@ -47,11 +49,11 @@
                     </a>
                 @endcan
                 @can('create', \Modules\Batch\Models\Batch::class)
-                    <a href="/dashboard/batches/create/{{ $course->getRouteKey() }}"
+                    <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-batch' }))"
                        class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
-                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+                        <i class="fa-solid fa-plus text-xs"></i>
                         Add Batch
-                    </a>
+                    </button>
                 @endcan
                 @can('viewAny', \Modules\Batch\Models\Batch::class)
                     <a href="/dashboard/courses/{{ $course->getRouteKey() }}/batches"
@@ -210,10 +212,11 @@
                             </div>
                             <p class="mt-2 text-sm font-medium text-slate-600">No batches yet</p>
                             @can('create', \Modules\Batch\Models\Batch::class)
-                                <a href="/dashboard/batches/create/{{ $course->getRouteKey() }}"
+                                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-batch' }))"
                                    class="mt-3 inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+                                    <i class="fa-solid fa-plus text-[10px]"></i>
                                     Add first batch
-                                </a>
+                                </button>
                             @endcan
                         </div>
                     @endforelse
@@ -238,4 +241,28 @@
             </div>
         </div>
     </div>
+
+    @can('create', \Modules\Batch\Models\Batch::class)
+        <x-modal name="create-batch" :show="$showCreateBatchModal" maxWidth="2xl" focusable>
+            <div class="max-h-[calc(100vh-6rem)] overflow-y-auto bg-white">
+                <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">New Batch</p>
+                        <h3 class="mt-1 text-xl font-black text-slate-950">Create batch</h3>
+                        <p class="mt-1 text-sm font-semibold text-slate-500">This batch will be added under {{ $course->title }}.</p>
+                    </div>
+                    <button type="button" onclick="window.dispatchEvent(new CustomEvent('close-modal', { detail: 'create-batch' }))" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-800">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-5">
+                    @include('batch::admin.batches.partials.create-form', [
+                        'modalName' => 'create-batch',
+                        'includeCourseSelect' => false,
+                        'course' => $course,
+                    ])
+                </div>
+            </div>
+        </x-modal>
+    @endcan
 </x-app-layout>

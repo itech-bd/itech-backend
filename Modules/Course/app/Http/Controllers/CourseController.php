@@ -21,7 +21,7 @@ class CourseController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('role_or_permission:admin|readCourse', only: ['index', 'show']),
-            new Middleware('role_or_permission:admin|addCourse', only: ['create', 'store']),
+            new Middleware('role_or_permission:admin|addCourse', only: ['store']),
             new Middleware('role_or_permission:admin|editCourse', only: ['edit', 'update']),
             new Middleware('role_or_permission:admin|deleteCourse', only: ['destroy']),
         ];
@@ -144,16 +144,6 @@ class CourseController extends Controller implements HasMiddleware
         }
 
         return view('course::courses.index');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        abort_unless(Gate::allows('create', Course::class), 403);
-
-        return view('course::courses.create');
     }
 
     /**
