@@ -128,6 +128,7 @@
 
             $logoPath = $frontendSettings['site_logo_path'] ?? null;
             $logoUrl = $logoPath ? asset('storage/' . ltrim((string) $logoPath, '/')) : asset('brand/itechbd-logo.png');
+            $frontendHomeUrl = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/en';
         @endphp
 
         <div x-data="{ sidebarOpen: false }" class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(46,49,146,.10),transparent_35%),radial-gradient(circle_at_top_right,rgba(244,123,32,.12),transparent_32%),#f8fafc]">
@@ -175,7 +176,7 @@
                         @include('layouts.sidebar')
                     </div>
                     <div class="border-t border-white/10 p-4">
-                        <a href="{{ route('home') }}" class="flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
+                        <a href="{{ $frontendHomeUrl }}" class="flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
                             <i class="fa-solid fa-globe"></i>
                             Visit Website
                         </a>
@@ -205,7 +206,7 @@
                                 </div>
 
                                 <div class="flex shrink-0 items-center justify-end gap-2 self-end sm:gap-3 xl:pt-1">
-                                    <a href="{{ route('home') }}" class="hidden min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#2E3192]/30 hover:text-[#2E3192] sm:inline-flex">
+                                    <a href="{{ $frontendHomeUrl }}" class="hidden min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#2E3192]/30 hover:text-[#2E3192] sm:inline-flex">
                                         <i class="fa-solid fa-house text-sm"></i>
                                         Home
                                     </a>

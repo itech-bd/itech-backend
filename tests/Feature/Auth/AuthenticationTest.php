@@ -40,7 +40,7 @@ test('users can logout', function () {
     $response = $this->actingAs($user)->post('/logout');
 
     $this->assertGuest();
-    $response->assertRedirect('/');
+    $response->assertRedirect('http://localhost:3000/en');
 });
 
 test('login redirect from checkout does not loop', function () {

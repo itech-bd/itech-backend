@@ -55,6 +55,8 @@ return [
     // Normalize to avoid double-slash URLs and signed URL mismatches.
     'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/'),
 
+    'frontend_url' => rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/'),
+
     /*
     |--------------------------------------------------------------------------
     | Force HTTPS Scheme

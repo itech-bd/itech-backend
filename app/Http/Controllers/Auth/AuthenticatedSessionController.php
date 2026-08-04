@@ -179,6 +179,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->away($this->frontendHomeUrl());
+    }
+
+    private function frontendHomeUrl(): string
+    {
+        $frontendUrl = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/');
+
+        return $frontendUrl.'/en';
     }
 }
