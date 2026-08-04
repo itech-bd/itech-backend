@@ -90,16 +90,13 @@ $adminAssignmentRoutes = static function (): void {
 
 $adminBatchRoutes = static function () use ($adminAssignmentRoutes): void {
     $adminBatchesIndexAction = [AdminBatchesController::class, 'index'];
-    $adminBatchesCreateAction = [AdminBatchesController::class, 'create'];
-    $adminBatchesCreateRedirectAction = [
-        AdminBatchesController::class,
-        'redirectToCourseCreate',
-    ];
 
     Route::get('batches', $adminBatchesIndexAction)->name('batches.index');
-    Route::get('batches/create', $adminBatchesCreateAction)->name('batches.create');
-    Route::post('batches/create', $adminBatchesCreateRedirectAction)
-        ->name('batches.create.redirect');
+    Route::get('batches/create', function () {
+        return redirect()->route('dashboard.batches.index', ['create' => 1]);
+    })->name('batches.create');
+    Route::post('batches', [AdminBatchesController::class, 'store'])
+        ->name('batches.store');
 
     Route::get('batches/{batch}', [AdminBatchDetailsController::class, 'show'])
         ->whereNumber('batch')
@@ -116,8 +113,15 @@ $adminBatchRoutes = static function () use ($adminAssignmentRoutes): void {
         ->name('batches.destroy');
 
     // Canonical per-course create/store under the Batches section
-    Route::get('batches/create/{course}', [CourseBatchController::class, 'create'])
-        ->name('batches.create.course');
+    Route::get(
+        'batches/create/{course}',
+        function (Course $course) {
+            return redirect()->route('dashboard.courses.batches.index', [
+                'course' => $course,
+                'create' => 1,
+            ]);
+        }
+    )->name('batches.create.course');
     Route::post('batches/{course}', [CourseBatchController::class, 'store'])
         ->name('batches.store.course');
 
@@ -125,7 +129,10 @@ $adminBatchRoutes = static function () use ($adminAssignmentRoutes): void {
     Route::get(
         'courses/{course}/batches/create',
         function (Course $course) {
-            return redirect()->route('dashboard.batches.create.course', $course);
+            return redirect()->route('dashboard.courses.batches.index', [
+                'course' => $course,
+                'create' => 1,
+            ]);
         }
     )->name('courses.batches.create');
 

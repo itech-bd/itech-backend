@@ -7,9 +7,10 @@ namespace Modules\Batch\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Modules\Batch\Actions\CreateBatch;
+use Modules\Batch\Http\Requests\StoreBatchRequest;
 use Modules\Batch\Models\Batch;
 use Modules\Course\Models\Course;
 use Yajra\DataTables\Facades\DataTables;
@@ -20,7 +21,7 @@ class AdminBatchesController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('role_or_permission:admin|readBatch', only: ['index']),
-            new Middleware('role_or_permission:admin|addBatch', only: ['create', 'redirectToCourseCreate']),
+            new Middleware('role_or_permission:admin|addBatch', only: ['store']),
         ];
     }
 
@@ -116,37 +117,36 @@ class AdminBatchesController extends Controller implements HasMiddleware
                 ->toJson();
         }
 
+        $courses = collect();
+        if (Gate::allows('create', Batch::class)) {
+            $courses = Course::query()
+                ->select(['id', 'title', 'status'])
+                ->orderBy('title')
+                ->limit(500)
+                ->get();
+        }
+
         return view('batch::admin.batches.all', [
             'activeStatus' => $activeStatus,
-        ]);
-    }
-
-    public function create(Request $request)
-    {
-        abort_unless(Gate::allows('create', Batch::class), 403);
-
-        $courses = Course::query()
-            ->select(['id', 'title', 'status'])
-            ->orderBy('title')
-            ->limit(500)
-            ->get();
-
-        return view('batch::admin.batches.create_from_all', [
             'courses' => $courses,
         ]);
     }
 
-    public function redirectToCourseCreate(Request $request)
+    public function store(StoreBatchRequest $request, CreateBatch $createBatch)
     {
         abort_unless(Gate::allows('create', Batch::class), 403);
 
-        $validated = $request->validate([
+        $courseData = $request->validate([
             'course_id' => ['required', 'integer', 'exists:courses,id'],
         ]);
 
-        $course = Course::query()->findOrFail((int) $validated['course_id']);
+        $course = Course::query()->findOrFail((int) $courseData['course_id']);
 
-        return redirect()->route('dashboard.batches.create.course', $course);
+        $createBatch->handle($course, $request->validated(), (int) Auth::id());
+
+        return redirect()
+            ->route('dashboard.batches.index')
+            ->with('success', 'Batch created successfully.');
     }
 }
 

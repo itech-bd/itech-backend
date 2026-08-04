@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Modules\Batch\Actions\CreateBatch;
 use Modules\Batch\Http\Requests\StoreBatchRequest;
 use Modules\Batch\Http\Requests\UpdateBatchRequest;
 use Modules\Batch\Models\Batch;
@@ -20,7 +20,7 @@ class CourseBatchController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('role_or_permission:admin|readBatch', only: ['index', 'show']),
-            new Middleware('role_or_permission:admin|addBatch', only: ['create', 'store']),
+            new Middleware('role_or_permission:admin|addBatch', only: ['store']),
             new Middleware('role_or_permission:admin|editBatch', only: ['edit', 'update']),
             new Middleware('role_or_permission:admin|deleteBatch', only: ['destroy']),
         ];
@@ -117,50 +117,13 @@ class CourseBatchController extends Controller implements HasMiddleware
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Course $course)
-    {
-        abort_unless(Gate::allows('create', Batch::class), 403);
-
-        return view('batch::admin.batches.create', compact('course'));
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBatchRequest $request, Course $course)
+    public function store(StoreBatchRequest $request, Course $course, CreateBatch $createBatch)
     {
         abort_unless(Gate::allows('create', Batch::class), 403);
 
-        $validated = $request->validated();
-
-        $adminId = (int) Auth::id();
-
-        $batch = DB::transaction(
-            function () use ($course, $validated, $adminId) {
-                $batch = Batch::query()->create([
-                    'course_id' => $course->id,
-                    'name' => $validated['name'],
-                    'start_date' => $validated['start_date'],
-                    'end_date' => $validated['end_date'],
-                    'class_days' => $validated['class_days'],
-                    'class_time' => $validated['class_time'],
-                    'live_class_link' => $validated['live_class_link'] ?? null,
-                    'status' => $validated['status'],
-                    'created_by' => $adminId,
-                ]);
-
-                // Ensure a newly created batch starts with no assignments.
-                // Mentors/students should only be attached manually by an admin.
-                $batch->mentors()->detach();
-                $batch->students()->detach();
-
-                $batch->autoGenerateClassSchedules($adminId);
-
-                return $batch;
-            }
-        );
+        $createBatch->handle($course, $request->validated(), (int) Auth::id());
 
         return redirect()
             ->route('dashboard.batches.index')
