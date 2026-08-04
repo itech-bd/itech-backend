@@ -76,22 +76,72 @@
         <style>
             [x-cloak] { display: none !important; }
             html { color-scheme: light; }
-            body { background: #f8fafc; }
+            body { background: #f5f7fb; }
             .itech-scrollbar::-webkit-scrollbar { width: 8px; }
             .itech-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 999px; }
+            .backend-shell {
+                background: linear-gradient(180deg, #f8fafc 0%, #eef3fb 100%);
+            }
+            .backend-main > :not(.profile-page) [class*="bg-white"][class*="shadow-sm"],
+            .backend-main > [class*="bg-white"][class*="shadow-sm"]:not(.profile-page) {
+                border-color: rgba(203, 213, 225, .72);
+                box-shadow: 0 18px 42px rgba(15, 23, 42, .07);
+            }
+            .backend-main > :not(.profile-page) input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="submit"]),
+            .backend-main > :not(.profile-page) select,
+            .backend-main > :not(.profile-page) textarea {
+                min-height: 2.75rem;
+                border-color: #d5deeb;
+                border-radius: .75rem;
+                color: #0f172a;
+                font-weight: 600;
+                box-shadow: none;
+            }
+            .backend-main > :not(.profile-page) input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="submit"]):focus,
+            .backend-main > :not(.profile-page) select:focus,
+            .backend-main > :not(.profile-page) textarea:focus {
+                border-color: #2E3192;
+                box-shadow: 0 0 0 3px rgba(46,49,146,.12);
+            }
+            .backend-main > :not(.profile-page) label {
+                color: #1e293b;
+                font-weight: 800;
+            }
+            .backend-main > :not(.profile-page) button.bg-gray-800 {
+                min-height: 2.75rem;
+                border-radius: .75rem;
+                background: #2E3192 !important;
+                padding-left: 1.1rem;
+                padding-right: 1.1rem;
+                box-shadow: 0 12px 26px rgba(46,49,146,.18);
+            }
+            .backend-main > :not(.profile-page) button.bg-gray-800:hover {
+                background: #23266f !important;
+                transform: translateY(-1px);
+            }
             .dataTables_wrapper { color: #334155; }
             .dataTables_wrapper .dataTables_filter input,
             .dataTables_wrapper .dataTables_length select {
-                border: 1px solid #e2e8f0 !important;
-                border-radius: .75rem !important;
-                padding: .45rem .75rem !important;
+                min-height: 2.55rem !important;
+                border: 1px solid #d5deeb !important;
+                border-radius: .8rem !important;
+                background: #fff !important;
+                padding: .52rem .8rem !important;
                 margin-left: .5rem !important;
                 outline: none !important;
+                font-weight: 700 !important;
             }
             .dataTables_wrapper .dataTables_filter input:focus,
             .dataTables_wrapper .dataTables_length select:focus {
                 border-color: #2E3192 !important;
                 box-shadow: 0 0 0 3px rgba(46,49,146,.12) !important;
+            }
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                color: #64748b !important;
+                font-size: .875rem;
+                font-weight: 700;
             }
             .dataTables_wrapper .dataTables_paginate .paginate_button.current,
             .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
@@ -108,6 +158,9 @@
             }
             table.dataTable.no-footer { border-bottom: 0 !important; }
             table.dataTable thead th { border-bottom: 1px solid #e2e8f0 !important; }
+            table.dataTable tbody tr { transition: background-color .18s ease, box-shadow .18s ease; }
+            table.dataTable tbody tr:hover { background: #f8fafc !important; }
+            table.dataTable tbody td { border-top: 1px solid #eef2f7; }
         </style>
     </head>
     <body class="font-sans antialiased text-slate-900">
@@ -131,7 +184,7 @@
             $frontendHomeUrl = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/en';
         @endphp
 
-        <div x-data="{ sidebarOpen: false }" class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(46,49,146,.10),transparent_35%),radial-gradient(circle_at_top_right,rgba(244,123,32,.12),transparent_32%),#f8fafc]">
+        <div x-data="{ sidebarOpen: false }" class="backend-shell min-h-screen">
             <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 lg:hidden" aria-hidden="true">
                 <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" @click="sidebarOpen = false"></div>
                 <div class="absolute inset-y-0 left-0 w-[19rem] max-w-[85vw] overflow-y-auto bg-[#17194f] p-4 shadow-2xl itech-scrollbar" @click.stop>
@@ -156,9 +209,9 @@
             </div>
 
             <div class="flex min-h-screen">
-                <aside class="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[19rem] lg:flex-col lg:self-start lg:bg-[#17194f] lg:text-white lg:shadow-2xl">
+                <aside class="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[19rem] lg:flex-col lg:self-start lg:bg-[linear-gradient(180deg,#17194f_0%,#121545_58%,#0f172a_100%)] lg:text-white lg:shadow-2xl">
                     <div class="border-b border-white/10 p-5">
-                        <a href="/dashboard" class="flex items-center gap-3 rounded-3xl bg-white p-3 shadow-sm">
+                        <a href="/dashboard" class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_14px_28px_rgba(0,0,0,.16)] transition hover:-translate-y-0.5">
                             <span class="grid h-12 w-12 place-items-center rounded-2xl bg-white">
                                 <img src="{{ $logoUrl }}" alt="{{ config('app.name') }}" class="max-h-10 max-w-full object-contain">
                             </span>
@@ -184,7 +237,7 @@
                 </aside>
 
                 <div class="flex min-w-0 flex-1 flex-col">
-                    <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+                    <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 shadow-[0_14px_36px_rgba(15,23,42,.06)] backdrop-blur-xl">
                         <div class="px-4 py-4 sm:px-6 lg:px-8">
                             <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                                 <div class="flex min-w-0 flex-1 items-start gap-3">
@@ -240,7 +293,7 @@
                         </div>
                     </header>
 
-                    <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                    <main class="backend-main flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                         @php
                             $globalSuccess = session('success');
 

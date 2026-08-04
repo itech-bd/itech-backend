@@ -10,8 +10,8 @@
     $canManageReviews = $user && ($user->can('addReview') || $user->can('editReview') || $user->can('deleteReview'));
 
     $navItem = 'group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold transition-all duration-200';
-    $active = 'bg-white text-[#2E3192] shadow-sm';
-    $inactive = 'text-white/72 hover:bg-white/10 hover:text-white';
+    $active = 'bg-white text-[#2E3192] shadow-[0_14px_28px_rgba(0,0,0,.14)]';
+    $inactive = 'text-white/70 hover:bg-white/10 hover:text-white hover:translate-x-0.5';
     $iconBase = 'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition';
     $iconActive = 'bg-[#2E3192]/10 text-[#2E3192]';
     $iconInactive = 'bg-white/10 text-white/80 group-hover:bg-white/15 group-hover:text-white';
@@ -19,7 +19,7 @@
 
 <nav class="space-y-6">
     <div>
-        <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/35">Main</div>
+        <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40">Main</div>
         <div class="space-y-1.5">
             @php $isActive = request()->routeIs('dashboard'); @endphp
             <a href="/dashboard" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">
@@ -37,7 +37,7 @@
 
     @if($isStudent || $canSeeStudentPanel)
         <div>
-            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/35">Learning</div>
+            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40">Learning</div>
             <div class="space-y-1.5">
                 @php $isActive = request()->routeIs('dashboard.student.courses.*'); @endphp
                 <a href="/dashboard/student/courses" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">
@@ -68,7 +68,7 @@
 
     @if($isMentor || $canSeeMentorBatches)
         <div>
-            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/35">Mentor</div>
+            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40">Mentor</div>
             <div class="space-y-1.5">
                 @php $isActive = request()->routeIs('dashboard.mentor.batches.*'); @endphp
                 <a href="/dashboard/mentor/batches" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">
@@ -81,7 +81,7 @@
 
     @if($isAdmin || $canManageCourses || $canManageReviews || ($user && $user->can('readReview')) || ($user && $user->can('readMentor')))
         <div>
-            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/35">Management</div>
+            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40">Management</div>
             <div class="space-y-1.5">
                 @if($isAdmin || $canManageCourses)
                     @php $isActive = request()->routeIs('dashboard.courses.*'); @endphp
@@ -132,7 +132,7 @@
 
     @if($isAdmin)
         <div>
-            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/35">System</div>
+            <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40">System</div>
             <div class="space-y-1.5">
                 @php $isActive = request()->routeIs('users.*'); @endphp
                 <a href="/users" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">

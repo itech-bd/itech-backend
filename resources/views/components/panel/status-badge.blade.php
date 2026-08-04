@@ -16,6 +16,6 @@
     $class = $map[$value] ?? 'bg-slate-50 text-slate-700 ring-slate-200';
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset '.$class]) }}>
+<span {{ $attributes->merge(['class' => 'inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold ring-1 ring-inset '.$class]) }}>
     {{ $status ? ucfirst((string) $status) : 'N/A' }}
 </span>
