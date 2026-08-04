@@ -184,54 +184,59 @@
 
                 <div class="flex min-w-0 flex-1 flex-col">
                     <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
-                        <div class="flex min-h-16 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                            <div class="flex min-w-0 items-center gap-3">
-                                <button type="button" class="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden" @click="sidebarOpen = true" aria-label="Open sidebar">
-                                    <i class="fa-solid fa-bars"></i>
-                                </button>
-                                <div class="min-w-0">
-                                    <p class="text-xs font-bold uppercase tracking-[0.25em] text-[#2E3192]/70">{{ $panelLabel }}</p>
-                                    <p class="mt-1 truncate text-sm text-slate-500">{{ now()->format('l, d M Y') }}</p>
+                        <div class="px-4 py-4 sm:px-6 lg:px-8">
+                            <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                <div class="flex min-w-0 flex-1 items-start gap-3">
+                                    <div class="pt-1 lg:hidden">
+                                        <button type="button" class="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50" @click="sidebarOpen = true" aria-label="Open sidebar">
+                                            <i class="fa-solid fa-bars"></i>
+                                        </button>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        @isset($header)
+                                            {{ $header }}
+                                        @else
+                                            <div>
+                                                <p class="text-xs font-bold uppercase tracking-[0.25em] text-[#2E3192]/70">{{ $panelLabel }}</p>
+                                                <p class="mt-1 truncate text-sm text-slate-500">{{ now()->format('l, d M Y') }}</p>
+                                            </div>
+                                        @endisset
+                                    </div>
+                                </div>
+
+                                <div class="flex shrink-0 items-center justify-end gap-2 self-end sm:gap-3 xl:pt-1">
+                                    <a href="{{ route('home') }}" class="hidden min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#2E3192]/30 hover:text-[#2E3192] sm:inline-flex">
+                                        <i class="fa-solid fa-house text-sm"></i>
+                                        Home
+                                    </a>
+                                    <x-dropdown align="right" width="56">
+                                        <x-slot name="trigger">
+                                            <button class="inline-flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-[#2E3192]/30 hover:shadow-md">
+                                                <x-avatar :user="Auth::user()" />
+                                                <span class="hidden min-w-0 sm:block">
+                                                    <span class="block max-w-40 truncate text-sm font-bold text-slate-900">{{ Auth::user()->name }}</span>
+                                                    <span class="block max-w-40 truncate text-xs text-slate-500">{{ Auth::user()->email }}</span>
+                                                </span>
+                                                <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                                            </button>
+                                        </x-slot>
+
+                                        <x-slot name="content">
+                                            <x-dropdown-link href="/profile">
+                                                {{ __('Profile') }}
+                                            </x-dropdown-link>
+
+                                            <form method="POST" action="/logout">
+                                                @csrf
+                                                <x-dropdown-link href="/logout" onclick="event.preventDefault(); this.closest('form').submit();">
+                                                    {{ __('Log Out') }}
+                                                </x-dropdown-link>
+                                            </form>
+                                        </x-slot>
+                                    </x-dropdown>
                                 </div>
                             </div>
-
-                            <div class="flex items-center gap-2 sm:gap-3">
-                                <a href="{{ route('home') }}" class="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#2E3192]/30 hover:text-[#2E3192] sm:inline-flex">
-                                    <i class="fa-solid fa-house mr-2"></i> Home
-                                </a>
-                                <x-dropdown align="right" width="56">
-                                    <x-slot name="trigger">
-                                        <button class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-[#2E3192]/30 hover:shadow-md">
-                                            <x-avatar :user="Auth::user()" />
-                                            <span class="hidden min-w-0 sm:block">
-                                                <span class="block max-w-40 truncate text-sm font-bold text-slate-900">{{ Auth::user()->name }}</span>
-                                                <span class="block max-w-40 truncate text-xs text-slate-500">{{ Auth::user()->email }}</span>
-                                            </span>
-                                            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
-                                        </button>
-                                    </x-slot>
-
-                                    <x-slot name="content">
-                                        <x-dropdown-link href="/profile">
-                                            {{ __('Profile') }}
-                                        </x-dropdown-link>
-
-                                        <form method="POST" action="/logout">
-                                            @csrf
-                                            <x-dropdown-link href="/logout" onclick="event.preventDefault(); this.closest('form').submit();">
-                                                {{ __('Log Out') }}
-                                            </x-dropdown-link>
-                                        </form>
-                                    </x-slot>
-                                </x-dropdown>
-                            </div>
                         </div>
-
-                        @isset($header)
-                            <div class="border-t border-slate-100 px-4 py-5 sm:px-6 lg:px-8">
-                                {{ $header }}
-                            </div>
-                        @endisset
                     </header>
 
                     <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

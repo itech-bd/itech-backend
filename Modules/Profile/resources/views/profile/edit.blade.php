@@ -9,12 +9,12 @@
         }
 
         .profile-page .profile-section {
-            scroll-margin-top: 10.5rem;
+            scroll-margin-top: 8rem;
         }
 
         @media (max-width: 1023px) {
             .profile-page .profile-section {
-                scroll-margin-top: 9.25rem;
+                scroll-margin-top: 10.25rem;
             }
         }
 
@@ -204,7 +204,7 @@
         </section>
 
         <div class="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
-            <aside class="space-y-4 xl:sticky xl:top-24 xl:self-start">
+            <aside class="space-y-4 xl:sticky xl:top-32 xl:self-start">
                 <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <div class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Sections</div>
                     <nav class="mt-4 space-y-1">
