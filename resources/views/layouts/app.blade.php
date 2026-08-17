@@ -187,7 +187,7 @@
         <div x-data="{ sidebarOpen: false }" class="backend-shell min-h-screen">
             <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 lg:hidden" aria-hidden="true">
                 <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" @click="sidebarOpen = false"></div>
-                <div class="absolute inset-y-0 left-0 w-[19rem] max-w-[85vw] overflow-y-auto bg-[#17194f] p-4 shadow-2xl itech-scrollbar" @click.stop>
+                <div class="absolute inset-y-0 left-0 w-[19rem] max-w-[85vw] overflow-y-auto bg-[#17194f] p-4 shadow-2xl itech-scrollbar" data-dashboard-sidebar-scroll="mobile" @click.stop>
                     <div class="flex items-center justify-between rounded-2xl bg-white/10 p-3 ring-1 ring-white/10">
                         <a href="/dashboard" class="flex min-w-0 items-center gap-3">
                             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white p-1 shadow-sm">
@@ -225,7 +225,7 @@
                             <p class="mt-1 text-sm font-semibold text-white">Welcome, {{ \Illuminate\Support\Str::limit(Auth::user()->name, 22) }}</p>
                         </div>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-4 itech-scrollbar">
+                    <div class="flex-1 overflow-y-auto p-4 itech-scrollbar" data-dashboard-sidebar-scroll="desktop">
                         @include('layouts.sidebar')
                     </div>
                     <div class="border-t border-white/10 p-4">

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+        <div class="flex flex-col gap-4 2xl:flex-row 2xl:items-end 2xl:justify-between">
+            <div class="min-w-0">
                 <div class="inline-flex items-center gap-2 rounded-full bg-[#2E3192]/10 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#2E3192]">
                     <i class="fa-solid fa-sparkles"></i>
                     Dashboard
@@ -20,9 +20,9 @@
                 </p>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center 2xl:flex-nowrap 2xl:justify-end">
                 @foreach($quickLinks as $link)
-                    <x-panel.action-link :href="$link['href']" tone="secondary">
+                    <x-panel.action-link :href="$link['href']" tone="secondary" class="w-full whitespace-nowrap xl:w-auto xl:shrink-0">
                         <i class="{{ $link['icon'] }}"></i>
                         {{ $link['label'] }}
                     </x-panel.action-link>

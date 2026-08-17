@@ -18,6 +18,63 @@ function forceLightExperience() {
 
 forceLightExperience();
 
+function keepDashboardSidebarInPlace() {
+    const sidebars = document.querySelectorAll('[data-dashboard-sidebar-scroll]');
+
+    if (!sidebars.length) {
+        return;
+    }
+
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+
+    sidebars.forEach((sidebar) => {
+        const sidebarName = sidebar.getAttribute('data-dashboard-sidebar-scroll') || 'default';
+        const storageKey = `itech:dashboard-sidebar-scroll:${sidebarName}`;
+        const savedScrollTop = Number(window.sessionStorage?.getItem(storageKey));
+
+        if (Number.isFinite(savedScrollTop) && savedScrollTop > 0) {
+            sidebar.scrollTop = savedScrollTop;
+        }
+
+        const links = Array.from(sidebar.querySelectorAll('a[href]'));
+        const activeLink = links.reduce((bestMatch, link) => {
+            const linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname.replace(/\/+$/, '') || '/';
+            const isMatch = currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(`${linkPath}/`));
+
+            if (!isMatch) {
+                return bestMatch;
+            }
+
+            if (!bestMatch || linkPath.length > bestMatch.path.length) {
+                return { link, path: linkPath };
+            }
+
+            return bestMatch;
+        }, null)?.link;
+
+        if (activeLink) {
+            const sidebarRect = sidebar.getBoundingClientRect();
+            const linkRect = activeLink.getBoundingClientRect();
+            const topOffset = linkRect.top - sidebarRect.top;
+            const bottomOffset = linkRect.bottom - sidebarRect.bottom;
+
+            if (topOffset < 20 || bottomOffset > -20) {
+                activeLink.scrollIntoView({ block: 'center' });
+            }
+        }
+
+        sidebar.addEventListener('click', (event) => {
+            const link = event.target.closest('a[href]');
+
+            if (link) {
+                window.sessionStorage?.setItem(storageKey, String(sidebar.scrollTop));
+            }
+        });
+    });
+}
+
+keepDashboardSidebarInPlace();
+
 window.Alpine = Alpine;
 
 Alpine.data('batchRotator', (batches = []) => ({
