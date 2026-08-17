@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div class="min-w-0">
                 <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">Admin &middot; Course Management</p>
                 <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Courses</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Create, update and monitor all professional skill courses.</p>
             </div>
 
             @can('addCourse')
-                <x-panel.action-link href="{{ route('dashboard.courses.create') }}" tone="orange">
+                <x-panel.action-link href="{{ route('dashboard.courses.create') }}" tone="orange" class="w-full whitespace-nowrap sm:w-auto lg:shrink-0">
                     <i class="fa-solid fa-plus"></i>
                     Add Course
                 </x-panel.action-link>

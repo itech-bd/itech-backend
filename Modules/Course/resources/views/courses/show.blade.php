@@ -18,8 +18,8 @@
     @endphp
 
     <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-4 min-w-0">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex min-w-0 items-center gap-4">
                 @if($thumbUrl)
                     <img src="{{ $thumbUrl }}" alt="{{ $course->title }}" class="h-12 w-12 rounded-xl object-cover ring-1 ring-slate-200 shrink-0">
                 @endif
@@ -40,24 +40,24 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 xl:flex xl:shrink-0 xl:flex-nowrap xl:items-center">
                 @can('editCourse')
                     <a href="/dashboard/courses/{{ $course->getRouteKey() }}/edit"
-                       class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                       class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 xl:w-auto xl:shrink-0">
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5 16.5 6.5 7 16H4v-3L13.5 3.5Z"/></svg>
                         Edit
                     </a>
                 @endcan
                 @can('create', \Modules\Batch\Models\Batch::class)
                     <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-batch' }))"
-                       class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                       class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 xl:w-auto xl:shrink-0">
                         <i class="fa-solid fa-plus text-xs"></i>
                         Add Batch
                     </button>
                 @endcan
                 @can('viewAny', \Modules\Batch\Models\Batch::class)
                     <a href="/dashboard/courses/{{ $course->getRouteKey() }}/batches"
-                       class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                       class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 xl:w-auto xl:shrink-0">
                         Manage Batches
                     </a>
                 @endcan

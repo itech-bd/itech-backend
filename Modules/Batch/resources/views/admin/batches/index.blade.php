@@ -6,14 +6,14 @@
 
     <x-slot name="header">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div class="min-w-0">
                 <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">Admin · Course Batches</p>
                 <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Batches</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Manage batches for: <span class="font-extrabold text-slate-800">{{ $course->title }}</span></p>
             </div>
 
             @can('create', \Modules\Batch\Models\Batch::class)
-                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-batch' }))" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#F47B20] px-4 py-2 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(244,123,32,.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d96816]">
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'create-batch' }))" class="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#F47B20] px-4 py-2 text-sm font-extrabold text-white shadow-[0_12px_26px_rgba(244,123,32,.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d96816] sm:w-auto lg:shrink-0">
                     <i class="fa-solid fa-plus"></i>
                     Add Batch
                 </button>
