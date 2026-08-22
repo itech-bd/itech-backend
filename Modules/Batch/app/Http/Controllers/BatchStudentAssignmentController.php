@@ -3,7 +3,7 @@
 namespace Modules\Batch\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Student;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,21 +51,20 @@ class BatchStudentAssignmentController extends Controller implements HasMiddlewa
 
         $approvedStudents = $batch->students()
             ->wherePivot('status', 'approved')
-            ->orderBy('users.name')
-            ->get(['users.id', 'users.name', 'users.email']);
+            ->orderBy('students.name')
+            ->get(['students.id', 'students.name', 'students.email']);
 
         $pendingStudents = $batch->students()
             ->wherePivot('status', 'pending')
-            ->orderBy('users.name')
-            ->get(['users.id', 'users.name', 'users.email']);
+            ->orderBy('students.name')
+            ->get(['students.id', 'students.name', 'students.email']);
 
         $existingStudentIds = $batch->students()
-            ->pluck('users.id')
+            ->pluck('students.id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $availableStudents = User::query()
-            ->role('student')
+        $availableStudents = Student::query()
             ->when(
                 count($existingStudentIds) > 0,
                 fn ($q) => $q->whereNotIn('id', $existingStudentIds),
@@ -103,15 +102,14 @@ class BatchStudentAssignmentController extends Controller implements HasMiddlewa
 
         $validated = $request->validate(
             [
-                'student_id' => ['required', 'integer', 'exists:users,id'],
+                'student_id' => ['required', 'integer', 'exists:students,id'],
                 'batch_type' => ['nullable', 'in:online,offline'],
             ]
         );
 
         $studentId = (int) $validated['student_id'];
         $batchType = $validated['batch_type'] ?? null;
-        $student = User::query()->findOrFail($studentId);
-        abort_unless($student->hasRole('student'), 422);
+        $student = Student::query()->findOrFail($studentId);
 
         $existing = DB::table('batch_students')
             ->where('batch_id', $batch->id)
@@ -164,11 +162,11 @@ class BatchStudentAssignmentController extends Controller implements HasMiddlewa
      *
      * @param Request $request The incoming request.
      * @param Batch   $batch   The batch model.
-     * @param User    $student The student user.
+     * @param Student $student The student account.
      *
      * @return RedirectResponse
      */
-    public function updateBatchType(Request $request, Batch $batch, User $student): RedirectResponse
+    public function updateBatchType(Request $request, Batch $batch, Student $student): RedirectResponse
     {
         abort_unless(Gate::allows('assignStudents', $batch), 403);
 
@@ -190,11 +188,11 @@ class BatchStudentAssignmentController extends Controller implements HasMiddlewa
      * Remove a student from the batch.
      *
      * @param Batch $batch   The batch model.
-     * @param User  $student The student user.
+     * @param Student $student The student account.
      *
      * @return RedirectResponse
      */
-    public function remove(Batch $batch, User $student): RedirectResponse
+    public function remove(Batch $batch, Student $student): RedirectResponse
     {
         abort_unless(Gate::allows('assignStudents', $batch), 403);
 
@@ -229,8 +227,7 @@ class BatchStudentAssignmentController extends Controller implements HasMiddlewa
             'intval',
             $request->validated()['student_ids'] ?? []
         );
-        $allowedStudentIds = User::query()
-            ->role('student')
+        $allowedStudentIds = Student::query()
             ->whereIn('id', $studentIds)
             ->pluck('id')
             ->all();

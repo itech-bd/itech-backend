@@ -3,7 +3,6 @@
 namespace Modules\Batch\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -12,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Modules\Batch\Http\Requests\UpdateBatchMentorsRequest;
 use Modules\Batch\Models\Batch;
+use Modules\Mentors\Models\Mentor;
 
 /**
  * Batch mentor assignment controller.
@@ -48,16 +48,16 @@ class BatchMentorAssignmentController extends Controller implements HasMiddlewar
         abort_unless(Gate::allows('assignMentors', $batch), 403);
 
         $assignedMentors = $batch->mentors()
-            ->orderBy('users.name')
-            ->get(['users.id', 'users.name', 'users.email']);
+            ->orderBy('mentors.name')
+            ->get(['mentors.id', 'mentors.name', 'mentors.email']);
 
         $assignedMentorIds = $assignedMentors
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $availableMentors = User::query()
-            ->role('mentor')
+        $availableMentors = Mentor::query()
+            ->where('is_active', true)
             ->when(
                 count($assignedMentorIds) > 0,
                 fn ($q) => $q->whereNotIn('id', $assignedMentorIds),
@@ -87,16 +87,15 @@ class BatchMentorAssignmentController extends Controller implements HasMiddlewar
 
         $validated = $request->validate(
             [
-                'mentor_id' => ['required', 'integer', 'exists:users,id'],
+                'mentor_id' => ['required', 'integer', 'exists:mentors,id'],
             ]
         );
 
         $mentorId = (int) $validated['mentor_id'];
-        $mentor = User::query()->findOrFail($mentorId);
-        abort_unless($mentor->hasRole('mentor'), 422);
+        $mentor = Mentor::query()->findOrFail($mentorId);
 
         $alreadyAssigned = $batch->mentors()
-            ->where('users.id', $mentorId)
+            ->where('mentors.id', $mentorId)
             ->exists();
 
         if ($alreadyAssigned) {
@@ -118,14 +117,13 @@ class BatchMentorAssignmentController extends Controller implements HasMiddlewar
      * Remove a mentor from the batch.
      *
      * @param Batch $batch  The batch model.
-     * @param User  $mentor The mentor user.
+     * @param Mentor $mentor The mentor account.
      *
      * @return RedirectResponse
      */
-    public function remove(Batch $batch, User $mentor): RedirectResponse
+    public function remove(Batch $batch, Mentor $mentor): RedirectResponse
     {
         abort_unless(Gate::allows('assignMentors', $batch), 403);
-        abort_unless($mentor->hasRole('mentor'), 422);
 
         $batch->mentors()->detach($mentor->id);
 
@@ -149,8 +147,8 @@ class BatchMentorAssignmentController extends Controller implements HasMiddlewar
         abort_unless(Gate::allows('assignMentors', $batch), 403);
 
         $mentorIds = array_map('intval', $request->validated()['mentor_ids'] ?? []);
-        $allowedMentorIds = User::query()
-            ->role('mentor')
+        $allowedMentorIds = Mentor::query()
+            ->where('is_active', true)
             ->whereIn('id', $mentorIds)
             ->pluck('id')
             ->all();

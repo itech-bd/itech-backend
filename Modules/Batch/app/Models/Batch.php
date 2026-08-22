@@ -2,6 +2,7 @@
 
 namespace Modules\Batch\Models;
 
+use App\Models\Student;
 use App\Models\User;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Course\Models\Course;
+use Modules\Mentors\Models\Mentor;
 // use Modules\Batch\Database\Factories\BatchFactory;
 
 class Batch extends Model
@@ -44,13 +46,13 @@ class Batch extends Model
 
     public function mentors(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'batch_mentors', 'batch_id', 'mentor_id')
+        return $this->belongsToMany(Mentor::class, 'batch_mentors', 'batch_id', 'mentor_id')
             ->withTimestamps();
     }
 
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'batch_students', 'batch_id', 'student_id')
+        return $this->belongsToMany(Student::class, 'batch_students', 'batch_id', 'student_id')
             ->withPivot(['status', 'batch_type', 'approved_at', 'approved_by'])
             ->withTimestamps();
     }

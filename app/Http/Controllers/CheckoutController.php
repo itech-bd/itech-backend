@@ -94,7 +94,7 @@ class CheckoutController extends Controller
         }
 
         $existing = CourseOrder::query()
-            ->where('user_id', $userId)
+            ->where('student_id', $userId)
             ->where('course_id', $course->id)
             ->where('status', 'pending')
             ->orderByDesc('id')
@@ -134,7 +134,7 @@ class CheckoutController extends Controller
         }
 
         $order = CourseOrder::query()->create([
-            'user_id' => $userId,
+            'student_id' => $userId,
             'course_id' => $course->id,
             'batch_id' => $selectedBatch?->id,
             'batch_type' => $batchType,
@@ -157,7 +157,7 @@ class CheckoutController extends Controller
     {
         $userId = (int) Auth::id();
         abort_unless($userId > 0, 403);
-        abort_unless((int) $order->user_id === $userId, 403);
+        abort_unless((int) $order->student_id === $userId, 403);
 
         $order->load('course');
 

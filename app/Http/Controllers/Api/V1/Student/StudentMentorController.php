@@ -19,8 +19,7 @@ class StudentMentorController extends ApiController
 
         $query = Mentor::query()
             ->where('is_active', true)
-            ->whereHas('user.mentorBatches', fn ($builder) => $builder->whereIn('batches.id', $batchIds))
-            ->with('user:id,name,email,profile_image')
+            ->whereHas('batches', fn ($builder) => $builder->whereIn('batches.id', $batchIds))
             ->orderBy('name');
 
         $search = trim((string) $request->query('search', ''));
@@ -39,8 +38,8 @@ class StudentMentorController extends ApiController
                 'name' => $mentor->name,
                 'topic' => $mentor->topic,
                 'bio' => $mentor->bio,
-                'email' => $mentor->user?->email,
-                'profile_image_url' => $mentor->user?->profile_image_url,
+                'email' => $mentor->email,
+                'profile_image_url' => $mentor->profile_image_url,
             ]),
             'filters' => ['search' => $search],
         ]);

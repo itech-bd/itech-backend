@@ -3,7 +3,7 @@
 namespace Modules\Batch\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Student;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -21,7 +21,7 @@ class BatchStudentApprovalController extends Controller implements HasMiddleware
         ];
     }
 
-    public function approve(Batch $batch, User $student): RedirectResponse
+    public function approve(Batch $batch, Student $student): RedirectResponse
     {
         abort_unless(Gate::allows('assignStudents', $batch), 403);
 
@@ -43,7 +43,7 @@ class BatchStudentApprovalController extends Controller implements HasMiddleware
             ->with('success', 'Student approved successfully.');
     }
 
-    public function reject(Batch $batch, User $student): RedirectResponse
+    public function reject(Batch $batch, Student $student): RedirectResponse
     {
         abort_unless(Gate::allows('assignStudents', $batch), 403);
 

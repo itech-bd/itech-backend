@@ -2,84 +2,103 @@
 
 namespace Modules\Batch\Policies;
 
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Modules\Batch\Models\Batch;
+use Modules\Mentors\Models\Mentor;
 
 class BatchPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, string $ability): ?bool
+    public function before(Authenticatable $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user instanceof User && $user->hasRole('admin')) {
             return true;
         }
 
         return null;
     }
 
-    public function viewAny(User $user): bool
+    public function viewAny(Authenticatable $user): bool
     {
-        return $user->can('readBatch');
+        if ($user instanceof Student || $user instanceof Mentor) {
+            return true;
+        }
+
+        return $user instanceof User && $user->can('readBatch');
     }
 
-    public function view(User $user, Batch $batch): bool
+    public function view(Authenticatable $user, Batch $batch): bool
     {
         // Batch managers (admin) can view any batch.
-        if ($user->can('addBatch') || $user->can('editBatch') || $user->can('deleteBatch')) {
-            return true;
+        if ($user instanceof User) {
+            if ($user->can('addBatch') || $user->can('editBatch') || $user->can('deleteBatch')) {
+                return true;
+            }
+
+            return $user->can('readBatch');
         }
 
-        // Mentors/students can only view batches they belong to.
-        $belongsToBatch = $batch->mentors()->where('users.id', $user->id)->exists()
-            || $batch->students()
+        if ($user instanceof Mentor) {
+            return $batch->mentors()->where('mentors.id', $user->id)->exists();
+        }
+
+        if ($user instanceof Student) {
+            return $batch->students()
                 ->wherePivotIn('status', ['pending', 'approved'])
-                ->where('users.id', $user->id)
+                ->where('students.id', $user->id)
                 ->exists();
-
-        if ($belongsToBatch) {
-            return true;
         }
 
-        return $user->can('readBatch');
+        return false;
     }
 
-    public function create(User $user): bool
+    public function create(Authenticatable $user): bool
     {
-        return $user->can('addBatch');
+        return $user instanceof User && $user->can('addBatch');
     }
 
-    public function update(User $user, Batch $batch): bool
+    public function update(Authenticatable $user, Batch $batch): bool
     {
-        return $user->can('editBatch');
+        return $user instanceof User && $user->can('editBatch');
     }
 
-    public function updateLiveClassLink(User $user, Batch $batch): bool
+    public function updateLiveClassLink(Authenticatable $user, Batch $batch): bool
     {
-        if ($user->can('editBatch')) {
-            return true;
+        if ($user instanceof User) {
+            if ($user->can('editBatch')) {
+                return true;
+            }
+
+            if (! $user->can('editClassSchedule')) {
+                return false;
+            }
+
+            return $batch->mentors()->where('mentors.user_id', $user->id)->exists();
         }
 
-        if (! $user->can('editClassSchedule')) {
-            return false;
+        if ($user instanceof Mentor) {
+            return $batch->mentors()->where('mentors.id', $user->id)->exists();
         }
 
-        return $batch->mentors()->where('users.id', $user->id)->exists();
+        return false;
     }
 
-    public function delete(User $user, Batch $batch): bool
+    public function delete(Authenticatable $user, Batch $batch): bool
     {
-        return $user->can('deleteBatch');
+        return $user instanceof User && $user->can('deleteBatch');
     }
 
-    public function assignMentors(User $user, Batch $batch): bool
+    public function assignMentors(Authenticatable $user, Batch $batch): bool
     {
-        return $user->can('assignMentorsToBatch');
+        return $user instanceof User && $user->can('assignMentorsToBatch');
     }
 
-    public function assignStudents(User $user, Batch $batch): bool
+    public function assignStudents(Authenticatable $user, Batch $batch): bool
     {
-        return $user->can('assignStudentsToBatch');
+        return $user instanceof User && $user->can('assignStudentsToBatch');
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PublicMediaController;
 use App\Http\Controllers\Auth\FrontendLoginHandoffController;
 use App\Http\Controllers\Admin\WysiwygUploadController;
+use App\Models\Student;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Modules\Batch\Models\Batch;
@@ -54,7 +55,7 @@ Route::middleware('frontend.locale')->group(
         Route::get('/courses/{course}', [SiteController::class, 'course'])
             ->name('courses.show');
 
-        Route::middleware('auth')->group(
+        Route::middleware('auth:web,student')->group(
             function () {
                 Route::get(
                     '/courses/{courseId}/checkout',
@@ -128,7 +129,7 @@ Route::middleware('frontend.locale')->group(
 Route::get(
     '/dashboard',
     function () {
-        $user = auth()->user();
+        $user = request()->user();
         abort_unless($user, 403);
 
         $isAdmin = method_exists($user, 'hasRole') && $user->hasRole('admin');
@@ -146,10 +147,7 @@ Route::get(
                 'courses' => Course::query()->count(),
                 'active_courses' => Course::query()->where('status', 'active')->count(),
                 'batches' => Batch::query()->count(),
-                'students' => DB::table('model_has_roles')
-                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->where('roles.name', 'student')
-                    ->count(),
+                'students' => Student::query()->count(),
                 'pending_enrollments' => DB::table('batch_students')->where('status', 'pending')->count(),
                 'paid_revenue' => (float) CourseOrder::query()->where('status', 'paid')->sum('amount'),
                 'pending_invoices' => CourseOrder::query()->where('status', 'pending')->count(),
@@ -187,7 +185,7 @@ Route::get(
 
             $stats = [
                 'courses' => Course::query()
-                    ->whereHas('batches.students', fn ($query) => $query->where('users.id', $user->id))
+                    ->whereHas('batches.students', fn ($query) => $query->where('students.id', $user->id))
                     ->count(),
                 'batches' => $studentBatchIds->count(),
                 'pending_batches' => DB::table('batch_students')
@@ -195,11 +193,11 @@ Route::get(
                     ->where('status', 'pending')
                     ->count(),
                 'paid_invoices' => CourseOrder::query()
-                    ->where('user_id', $user->id)
+                    ->where('student_id', $user->id)
                     ->where('status', 'paid')
                     ->count(),
                 'paid_amount' => (float) CourseOrder::query()
-                    ->where('user_id', $user->id)
+                    ->where('student_id', $user->id)
                     ->where('status', 'paid')
                     ->sum('amount'),
             ];
@@ -213,7 +211,7 @@ Route::get(
                 ->get();
 
             $recentOrders = CourseOrder::query()
-                ->where('user_id', $user->id)
+                ->where('student_id', $user->id)
                 ->with(['course:id,title', 'batch:id,name'])
                 ->latest()
                 ->limit(4)
@@ -285,7 +283,7 @@ Route::get(
             'recentBatches'
         ));
     }
-)->middleware(['auth', 'verified', 'backend.locale'])->name('dashboard');
+)->middleware(['auth:web,student,mentor', 'verified', 'backend.locale'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'role:admin', 'backend.locale'])
     ->prefix('admin')

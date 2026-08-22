@@ -13,7 +13,7 @@ class UpdateBatchStudentsRequest extends FormRequest
     {
         return [
             'student_ids' => ['required', 'array'],
-            'student_ids.*' => ['integer', 'distinct', 'exists:users,id'],
+            'student_ids.*' => ['integer', 'distinct', 'exists:students,id'],
         ];
     }
 

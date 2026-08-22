@@ -17,12 +17,12 @@ class StudentCourseController extends ApiController
 
         $query = Course::query()
             ->whereHas('batches.students', fn ($builder) => $builder
-                ->where('users.id', $userId)
+                ->where('students.id', $userId)
                 ->whereIn('batch_students.status', ['pending', 'approved']))
             ->withCount([
                 'batches as enrolled_batches_count' => fn ($builder) => $builder
                     ->whereHas('students', fn ($studentQuery) => $studentQuery
-                        ->where('users.id', $userId)
+                        ->where('students.id', $userId)
                         ->whereIn('batch_students.status', ['pending', 'approved'])),
             ])
             ->latest('id');

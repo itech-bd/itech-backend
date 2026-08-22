@@ -28,18 +28,18 @@ class StudentDashboardController extends ApiController
         $stats = [
             'courses' => Course::query()
                 ->whereHas('batches.students', fn ($query) => $query
-                    ->where('users.id', $user->id)
+                    ->where('students.id', $user->id)
                     ->whereIn('batch_students.status', ['pending', 'approved']))
                 ->count(),
             'batches' => $batchIds->count(),
             'approved_batches' => $approvedBatchIds->count(),
             'pending_batches' => $enrollments->where('status', 'pending')->count(),
             'paid_invoices' => CourseOrder::query()
-                ->where('user_id', $user->id)
+                ->where('student_id', $user->id)
                 ->where('status', 'paid')
                 ->count(),
             'paid_amount' => (float) CourseOrder::query()
-                ->where('user_id', $user->id)
+                ->where('student_id', $user->id)
                 ->where('status', 'paid')
                 ->sum('amount'),
         ];
@@ -69,7 +69,7 @@ class StudentDashboardController extends ApiController
             ])->values();
 
         $recentOrders = CourseOrder::query()
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
             ->with(['course:id,title,slug', 'batch:id,name'])
             ->latest('id')
             ->limit(4)

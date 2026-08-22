@@ -26,7 +26,7 @@ $dashboardRoutes = static function () use (
     $adminGroup = Route::middleware(['role:admin']);
     $adminGroup->group($adminCourseRoutes);
 
-    $studentGroup = Route::middleware(['role:student']);
+    $studentGroup = Route::middleware(['account:student']);
     $studentGroup = $studentGroup->prefix('student');
     $studentGroup = $studentGroup->name('student.');
     $studentGroup->group($studentCourseRoutes);
@@ -37,4 +37,4 @@ $webRoutes = static function () use ($dashboardRoutes): void {
     $dashboardGroup->group($dashboardRoutes);
 };
 
-Route::middleware(['auth', 'verified', 'backend.locale'])->group($webRoutes);
+Route::middleware(['auth:web,student,mentor', 'verified', 'backend.locale'])->group($webRoutes);

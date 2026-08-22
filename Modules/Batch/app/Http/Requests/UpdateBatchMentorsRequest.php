@@ -13,7 +13,7 @@ class UpdateBatchMentorsRequest extends FormRequest
     {
         return [
             'mentor_ids' => ['required', 'array'],
-            'mentor_ids.*' => ['integer', 'distinct', 'exists:users,id'],
+            'mentor_ids.*' => ['integer', 'distinct', 'exists:mentors,id'],
         ];
     }
 

@@ -86,7 +86,7 @@ class CheckoutController extends ApiController
 
             if ($joined) {
                 $existingSameOrder = CourseOrder::query()
-                    ->where('user_id', $userId)
+                    ->where('student_id', $userId)
                     ->where('course_id', $course->id)
                     ->where('batch_id', $batch->id)
                     ->where('status', 'pending')
@@ -111,7 +111,7 @@ class CheckoutController extends ApiController
 
         $order = DB::transaction(function () use ($course, $batch, $batchType, $amount, $userId): CourseOrder {
             $existing = CourseOrder::query()
-                ->where('user_id', $userId)
+                ->where('student_id', $userId)
                 ->where('course_id', $course->id)
                 ->where('status', 'pending')
                 ->lockForUpdate()
@@ -145,7 +145,7 @@ class CheckoutController extends ApiController
             }
 
             $created = CourseOrder::query()->create([
-                'user_id' => $userId,
+                'student_id' => $userId,
                 'course_id' => $course->id,
                 'batch_id' => $batch?->id,
                 'batch_type' => $batchType,
@@ -168,7 +168,7 @@ class CheckoutController extends ApiController
 
     public function order(Request $request, CourseOrder $order): JsonResponse
     {
-        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
+        abort_unless((int) $order->student_id === (int) $request->user()->id, 403);
         $order->load(['course', 'batch']);
 
         return $this->success($this->orderPayload($order));

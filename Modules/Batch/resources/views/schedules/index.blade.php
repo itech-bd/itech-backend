@@ -8,7 +8,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                @can('addClassSchedule')
+                @can('create', \Modules\Batch\Models\ClassSchedule::class)
                     <a href="/dashboard/batches/{{ $batch->getRouteKey() }}/schedules/create" class="inline-flex items-center gap-2 rounded-2xl bg-[#2E3192] px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#252879]">
                         <i class="fa-solid fa-plus"></i>
                         Add Class

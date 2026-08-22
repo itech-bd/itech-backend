@@ -3,13 +3,13 @@
 namespace Modules\Invoice\Support;
 
 use App\Models\FrontendSetting;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Modules\Course\Models\CourseOrder;
 
 class InvoicePdf
 {
-    public static function download(CourseOrder $order, User $user)
+    public static function download(CourseOrder $order, Authenticatable $user)
     {
         return Pdf::loadView(
             'invoice::pdf.document',

@@ -17,7 +17,7 @@ class StudentInvoiceController extends ApiController
         $allowed = ['pending', 'paid', 'cancelled'];
 
         $query = CourseOrder::query()
-            ->where('user_id', $request->user()->id)
+            ->where('student_id', $request->user()->id)
             ->with(['course:id,title,slug', 'batch:id,name'])
             ->latest('id');
 
@@ -35,7 +35,7 @@ class StudentInvoiceController extends ApiController
 
     public function show(Request $request, CourseOrder $order): JsonResponse
     {
-        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
+        abort_unless((int) $order->student_id === (int) $request->user()->id, 403);
 
         $order->loadMissing(['course', 'batch', 'user:id,name,email']);
 
@@ -44,7 +44,7 @@ class StudentInvoiceController extends ApiController
 
     public function download(Request $request, CourseOrder $order): Response
     {
-        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
+        abort_unless((int) $order->student_id === (int) $request->user()->id, 403);
 
         $order->loadMissing(['course', 'batch', 'user:id,name,email']);
 

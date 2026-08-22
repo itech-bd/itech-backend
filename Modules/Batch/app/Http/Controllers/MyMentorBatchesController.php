@@ -3,17 +3,17 @@
 namespace Modules\Batch\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Modules\Batch\Models\Batch;
+use Modules\Mentors\Models\Mentor;
 
 class MyMentorBatchesController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        abort_unless($user instanceof User, 403);
+        abort_unless($user instanceof Mentor, 403);
 
         $allowedStatuses = ['upcoming', 'running', 'completed'];
         $activeStatus = (string) request()->query('status', 'upcoming');
@@ -47,7 +47,7 @@ class MyMentorBatchesController extends Controller
     public function show(Batch $batch)
     {
         $user = Auth::user();
-        abort_unless($user instanceof User, 403);
+        abort_unless($user instanceof Mentor, 403);
 
         $isAssigned = $user->mentorBatches()->whereKey($batch->id)->exists();
         abort_unless($isAssigned, 403);

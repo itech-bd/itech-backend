@@ -36,7 +36,7 @@ class MyInvoicesController extends Controller
         $activeStatus = in_array($status, $allowedStatuses, true) ? $status : null;
 
         $ordersQuery = CourseOrder::query()
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
             ->with(['course:id,title', 'batch:id,name'])
             ->orderByDesc('id');
 
@@ -67,7 +67,7 @@ class MyInvoicesController extends Controller
         $user = Auth::user();
         abort_unless($user !== null, 403);
 
-        abort_unless((int) $order->user_id === (int) $user->id, 403);
+        abort_unless((int) $order->student_id === (int) $user->id, 403);
 
         $order->loadMissing(
             [
@@ -98,7 +98,7 @@ class MyInvoicesController extends Controller
         $user = Auth::user();
         abort_unless($user !== null, 403);
 
-        abort_unless((int) $order->user_id === (int) $user->id, 403);
+        abort_unless((int) $order->student_id === (int) $user->id, 403);
 
         $order->loadMissing(
             [

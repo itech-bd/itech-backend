@@ -20,7 +20,7 @@ class ClassScheduleController extends Controller implements HasMiddleware
     {
         return [
             new Middleware(
-                'role_or_permission:admin|readClassSchedule',
+                'account:admin|student|mentor',
                 only: ['index', 'show']
             ),
             new Middleware(
@@ -204,8 +204,6 @@ class ClassScheduleController extends Controller implements HasMiddleware
             return;
         }
 
-        // Mentors can manage schedules only for assigned batches.
-        $isAssignedMentor = $batch->mentors()->where('users.id', $user->id)->exists();
-        abort_unless($isAssignedMentor, 403);
+        abort(403);
     }
 }

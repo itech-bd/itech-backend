@@ -21,7 +21,7 @@ class BatchLiveClassLinkController extends Controller implements HasMiddleware
     {
         return [
             new Middleware(
-                'role_or_permission:admin|editClassSchedule',
+                'account:admin|mentor',
                 only: ['edit', 'update']
             ),
         ];

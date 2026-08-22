@@ -174,12 +174,12 @@ $dashboardRoutes = static function () use (
     Route::put('batches/{batch}/live-link', [BatchLiveClassLinkController::class, 'update'])
         ->name('batches.live_link.update');
 
-    $mentorGroup = Route::middleware(['role:mentor']);
+    $mentorGroup = Route::middleware(['account:mentor']);
     $mentorGroup = $mentorGroup->prefix('mentor');
     $mentorGroup = $mentorGroup->name('mentor.');
     $mentorGroup->group($mentorBatchRoutes);
 
-    $studentGroup = Route::middleware(['role:student']);
+    $studentGroup = Route::middleware(['account:student']);
     $studentGroup = $studentGroup->prefix('student');
     $studentGroup = $studentGroup->name('student.');
     $studentGroup->group($studentBatchRoutes);
@@ -190,4 +190,4 @@ $webRoutes = static function () use ($dashboardRoutes): void {
     $dashboardGroup->group($dashboardRoutes);
 };
 
-Route::middleware(['auth', 'verified', 'backend.locale'])->group($webRoutes);
+Route::middleware(['auth:web,student,mentor', 'verified', 'backend.locale'])->group($webRoutes);

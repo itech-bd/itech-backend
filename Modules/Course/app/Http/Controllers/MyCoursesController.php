@@ -15,7 +15,7 @@ class MyCoursesController extends Controller
 
         $courses = Course::query()
             ->whereHas('batches.students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
+                $query->where('students.id', $user->id);
             })
             ->withCount('batches')
             ->orderByDesc('id')
@@ -30,13 +30,13 @@ class MyCoursesController extends Controller
         abort_unless($user, 403);
 
         $isEnrolled = $course->batches()
-            ->whereHas('students', fn ($q) => $q->where('users.id', $user->id))
+            ->whereHas('students', fn ($q) => $q->where('students.id', $user->id))
             ->exists();
 
         abort_unless($isEnrolled, 403);
 
         $course->load(['batches' => function ($query) use ($user) {
-            $query->whereHas('students', fn ($q) => $q->where('users.id', $user->id))
+            $query->whereHas('students', fn ($q) => $q->where('students.id', $user->id))
                 ->withCount(['mentors', 'students'])
                 ->orderByDesc('id');
         }]);
