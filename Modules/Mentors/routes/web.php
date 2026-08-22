@@ -7,7 +7,7 @@ use Modules\Mentors\Http\Controllers\MyMentorsController;
 $dashboardMentorsRoutes = static function (): void {
     Route::resource('mentors', MentorController::class)->names('mentors');
 
-    $studentGroup = Route::middleware(['role:student']);
+    $studentGroup = Route::middleware(['account:student']);
     $studentGroup = $studentGroup->prefix('student');
     $studentGroup = $studentGroup->name('student.');
 
@@ -27,4 +27,4 @@ $webRoutes = static function () use ($dashboardMentorsRoutes): void {
     $dashboardGroup->group($dashboardMentorsRoutes);
 };
 
-Route::middleware(['auth', 'backend.locale'])->group($webRoutes);
+Route::middleware(['auth:web,student,mentor', 'backend.locale'])->group($webRoutes);

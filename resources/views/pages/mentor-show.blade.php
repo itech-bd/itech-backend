@@ -5,8 +5,7 @@
 @section('content')
 @php
 
-    $user = $mentor->user;
-    $imagePath = optional($user)->profile_image;
+    $imagePath = $mentor->profile_image;
     $imageUrl = is_string($imagePath) && trim($imagePath) !== '' ? \Illuminate\Support\Facades\Storage::disk('public')->url(ltrim($imagePath, '/')) : null;
     $initials = collect(explode(' ', $mentor->name))->filter()->take(2)->map(fn ($part) => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($part, 0, 1)))->implode('');
 @endphp
@@ -30,8 +29,8 @@
                 @if($mentor->topic)
                     <p class="mt-3 text-xl font-bold text-[#ffd3c2]">{{ $mentor->topic }}</p>
                 @endif
-                @if(optional($user)->email)
-                    <a href="mailto:{{ $user->email }}" class="mt-5 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-bold ring-1 ring-white/20 hover:bg-white/20">{{ $user->email }}</a>
+                @if($mentor->email)
+                    <a href="mailto:{{ $mentor->email }}" class="mt-5 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-bold ring-1 ring-white/20 hover:bg-white/20">{{ $mentor->email }}</a>
                 @endif
             </div>
         </div>
@@ -47,25 +46,25 @@
             </div>
 
             <aside class="space-y-6">
-                @if($user && $user->skills && $user->skills->count())
+                @if(collect($mentor->skills ?? [])->count())
                     <div class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
                         <h2 class="text-xl font-black text-slate-950">Skills</h2>
                         <div class="mt-4 flex flex-wrap gap-2">
-                            @foreach($user->skills as $skill)
-                                <span class="rounded-full bg-[#292b86]/10 px-3 py-1 text-xs font-bold text-[#292b86]">{{ $skill->name }}</span>
+                            @foreach(collect($mentor->skills ?? []) as $skill)
+                                <span class="rounded-full bg-[#292b86]/10 px-3 py-1 text-xs font-bold text-[#292b86]">{{ data_get($skill, 'name') }}</span>
                             @endforeach
                         </div>
                     </div>
                 @endif
 
-                @if($user && $user->experiences && $user->experiences->count())
+                @if(collect($mentor->experiences ?? [])->count())
                     <div class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
                         <h2 class="text-xl font-black text-slate-950">Experience</h2>
                         <div class="mt-4 grid gap-4">
-                            @foreach($user->experiences->take(4) as $experience)
+                            @foreach(collect($mentor->experiences ?? [])->take(4) as $experience)
                                 <div class="rounded-2xl bg-slate-50 p-4">
-                                    <div class="font-bold text-slate-950">{{ $experience->title ?? $experience->designation ?? 'Experience' }}</div>
-                                    <div class="text-sm text-slate-600">{{ $experience->company ?? '' }}</div>
+                                    <div class="font-bold text-slate-950">{{ data_get($experience, 'job_title', 'Experience') }}</div>
+                                    <div class="text-sm text-slate-600">{{ data_get($experience, 'company_name', '') }}</div>
                                 </div>
                             @endforeach
                         </div>

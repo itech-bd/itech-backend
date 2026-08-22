@@ -112,8 +112,12 @@
 
 <x-app-layout>
     @php
-        $profile = $user->profile;
-        $address = $user->address;
+        $isFlatAccount = $isFlatAccount ?? false;
+        $profile = $profile ?? $user->profile;
+        $address = $address ?? $user->address;
+        $educations = collect($educations ?? $user->educations);
+        $experiences = collect($experiences ?? $user->experiences);
+        $skills = collect($skills ?? $user->skills);
         $roleNames = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect();
         $primaryRole = $roleNames->first() ?: 'Member';
         $publicUrl = $profile?->public_url;
@@ -128,9 +132,9 @@
             filled($profile?->bio),
             filled($publicUrl),
             filled($address?->city) && filled($address?->country),
-            $user->educations->isNotEmpty(),
-            $user->experiences->isNotEmpty(),
-            $user->skills->isNotEmpty(),
+            $educations->isNotEmpty(),
+            $experiences->isNotEmpty(),
+            $skills->isNotEmpty(),
         ];
         $completedCount = collect($completionChecks)->filter()->count();
         $completionPercent = (int) round(($completedCount / count($completionChecks)) * 100);
@@ -224,15 +228,15 @@
                     <dl class="mt-4 space-y-3 text-sm">
                         <div class="flex items-center justify-between gap-3">
                             <dt class="font-bold text-slate-500">Education</dt>
-                            <dd class="font-black text-slate-950">{{ $user->educations->count() }}</dd>
+                            <dd class="font-black text-slate-950">{{ $educations->count() }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <dt class="font-bold text-slate-500">Experience</dt>
-                            <dd class="font-black text-slate-950">{{ $user->experiences->count() }}</dd>
+                            <dd class="font-black text-slate-950">{{ $experiences->count() }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <dt class="font-bold text-slate-500">Skills</dt>
-                            <dd class="font-black text-slate-950">{{ $user->skills->count() }}</dd>
+                            <dd class="font-black text-slate-950">{{ $skills->count() }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <dt class="font-bold text-slate-500">Public link</dt>

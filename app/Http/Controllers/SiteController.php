@@ -168,11 +168,10 @@ class SiteController extends Controller
 
         $mentors = Schema::hasTable('mentors')
             ? Mentor::query()
-                ->with(['user:id,name,profile_image'])
                 ->where('is_active', true)
                 ->orderByDesc('id')
                 ->limit(8)
-                ->get(['id', 'user_id', 'name', 'slug', 'topic', 'bio', 'is_active'])
+                ->get(['id', 'name', 'slug', 'topic', 'bio', 'is_active', 'profile_image'])
             : new Collection();
 
         $reviews = Schema::hasTable('reviews')
@@ -257,7 +256,6 @@ class SiteController extends Controller
 
         $mentors = Schema::hasTable('mentors')
             ? Mentor::query()
-                ->with(['user:id,name,profile_image'])
                 ->where('is_active', true)
                 ->orderByDesc('id')
                 ->paginate(12)
@@ -288,24 +286,6 @@ class SiteController extends Controller
         $mentor = $mentorQuery->firstOrFail();
 
         abort_unless($mentor->is_active, 404);
-
-        $mentor->loadMissing([
-            'user' => fn ($query) => $query
-                ->select(['id', 'name', 'email', 'profile_image'])
-                ->with([
-                    'profile',
-                    'address',
-                    'educations' => fn ($q) => $q
-                        ->orderByDesc('end_year')
-                        ->orderByDesc('start_year')
-                        ->orderByDesc('id'),
-                    'experiences' => fn ($q) => $q
-                        ->orderByDesc('end_date')
-                        ->orderByDesc('start_date')
-                        ->orderByDesc('id'),
-                    'skills' => fn ($q) => $q->orderBy('name'),
-                ]),
-        ]);
 
         $relatedCourses = new Collection();
         if (Schema::hasTable('courses')) {

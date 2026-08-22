@@ -46,15 +46,11 @@
         </div>
 
         <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Linked User</div>
-            @if($mentor->user)
-                <div class="mt-2 text-sm text-slate-800">
-                    <div class="font-semibold">{{ $mentor->user->name }}</div>
-                    <div class="text-slate-500">{{ $mentor->user->email }}</div>
-                </div>
-            @else
-                <div class="mt-2 text-sm text-slate-500">Not linked</div>
-            @endif
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Mentor Account</div>
+            <div class="mt-2 text-sm text-slate-800">
+                <div class="font-semibold">{{ $mentor->name }}</div>
+                <div class="text-slate-500">{{ $mentor->email ?? '-' }}</div>
+            </div>
         </div>
     </div>
 </x-app-layout>

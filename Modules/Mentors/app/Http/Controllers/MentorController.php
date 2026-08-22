@@ -3,12 +3,13 @@
 namespace Modules\Mentors\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Support\Accounts;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -42,11 +43,10 @@ class MentorController extends Controller implements HasMiddleware
 
         if (request()->ajax() && request()->has('draw')) {
             $query = Mentor::query()
-                ->with(['user:id,name,email'])
                 ->select([
                     'id',
-                    'user_id',
                     'name',
+                    'email',
                     'topic',
                     'bio',
                     'is_active',
@@ -89,15 +89,15 @@ class MentorController extends Controller implements HasMiddleware
 
     private function renderLinkedUserCell(Mentor $mentor): string
     {
-        if (! $mentor->user) {
+        if (! $mentor->email) {
             return '<span class="text-slate-500">-</span>';
         }
 
         return '<div class="font-medium">'
-            . e($mentor->user->name)
+            . e($mentor->name)
             . '</div>'
             . '<div class="text-xs text-slate-500">'
-            . e($mentor->user->email)
+            . e($mentor->email)
             . '</div>';
     }
 
@@ -164,7 +164,7 @@ class MentorController extends Controller implements HasMiddleware
 
         $validated = $request->validate(
             [
-                'email' => 'required|email|max:255|unique:users,email',
+                'email' => ['required', 'email', 'max:255', ...Accounts::emailUniqueRules()],
                 'name' => 'required|string|max:255',
                 'slug' => [
                     'nullable',
@@ -195,22 +195,14 @@ class MentorController extends Controller implements HasMiddleware
 
         DB::transaction(
             function () use ($validated) {
-                $user = User::query()->create(
-                    [
-                        'name' => $validated['name'],
-                        'email' => $validated['email'],
-                        'password' => '12345678',
-                        'must_change_password' => true,
-                    ]
-                );
-
-                $user->assignRole('mentor');
-
                 Mentor::query()->create(
                     [
-                        'user_id' => $user->id,
-                        'slug' => $validated['slug'],
                         'name' => $validated['name'],
+                        'email' => Str::lower($validated['email']),
+                        'email_verified_at' => now(),
+                        'password' => Hash::make('12345678'),
+                        'must_change_password' => true,
+                        'slug' => $validated['slug'],
                         'topic' => $validated['topic'] ?? null,
                         'bio' => $validated['bio'] ?? null,
                         'is_active' => $validated['is_active'],
@@ -231,8 +223,6 @@ class MentorController extends Controller implements HasMiddleware
     {
         abort_unless(Gate::allows('view', $mentor), 403);
 
-        $mentor->load(['user:id,name,email']);
-
         return view('mentors::mentors.show', compact('mentor'));
     }
 
@@ -242,8 +232,6 @@ class MentorController extends Controller implements HasMiddleware
     public function edit(Mentor $mentor)
     {
         abort_unless(Gate::allows('update', $mentor), 403);
-
-        $mentor->load(['user:id,name,email,profile_image']);
 
         return view('mentors::mentors.edit', compact('mentor'));
     }
@@ -261,7 +249,7 @@ class MentorController extends Controller implements HasMiddleware
                     'required',
                     'email',
                     'max:255',
-                    Rule::unique('users', 'email')->ignore($mentor->user_id),
+                    ...Accounts::emailUniqueRules($mentor),
                 ],
                 'name' => 'required|string|max:255',
                 'slug' => [
@@ -296,52 +284,25 @@ class MentorController extends Controller implements HasMiddleware
 
         DB::transaction(
             function () use ($mentor, $validated, $request) {
-                $mentor->loadMissing(['user']);
-
-                if ($mentor->user) {
-                    $user = $mentor->user;
-                } else {
-                    $user = User::query()->create(
-                        [
-                            'name' => $validated['name'],
-                            'email' => $validated['email'],
-                            'password' => '12345678',
-                            'must_change_password' => true,
-                        ]
-                    );
-                    $user->assignRole('mentor');
-                    $mentor->user()->associate($user);
-                }
-
-                $user->fill(
-                    [
-                        'name' => $validated['name'],
-                        'email' => $validated['email'],
-                    ]
-                );
-
                 if ($request->boolean('remove_profile_image')) {
-                    $this->deleteProfileImage($user);
-                    $user->profile_image = null;
+                    $this->deleteProfileImage($mentor);
+                    $mentor->profile_image = null;
                 }
 
                 if ($request->hasFile('profile_image')) {
-                    $this->deleteProfileImage($user);
-                    $user->profile_image = $request->file('profile_image')
+                    $this->deleteProfileImage($mentor);
+                    $mentor->profile_image = $request->file('profile_image')
                         ->store('profile-images', 'public');
                 }
 
-                $user->save();
-
-                $mentor->update(
-                    [
-                        'slug' => $validated['slug'],
-                        'name' => $validated['name'],
-                        'topic' => $validated['topic'] ?? null,
-                        'bio' => $validated['bio'] ?? null,
-                        'is_active' => $validated['is_active'],
-                    ]
-                );
+                $mentor->fill([
+                    'name' => $validated['name'],
+                    'email' => Str::lower($validated['email']),
+                    'slug' => $validated['slug'],
+                    'topic' => $validated['topic'] ?? null,
+                    'bio' => $validated['bio'] ?? null,
+                    'is_active' => $validated['is_active'],
+                ])->save();
             }
         );
 
@@ -353,9 +314,9 @@ class MentorController extends Controller implements HasMiddleware
     /**
      * Delete the currently stored mentor profile image.
      */
-    protected function deleteProfileImage(User $user): void
+    protected function deleteProfileImage(Mentor $mentor): void
     {
-        $path = $user->profile_image;
+        $path = $mentor->profile_image;
 
         if (is_string($path) && $path !== '') {
             Storage::disk('public')->delete($path);

@@ -3,8 +3,8 @@
 namespace Modules\Profile\Http\Requests;
 
 use App\Models\User;
+use App\Support\Accounts;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * Validate profile update inputs.
@@ -31,7 +31,7 @@ class ProfileUpdateRequest extends FormRequest
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($targetUser?->id),
+                ...Accounts::emailUniqueRules($targetUser),
             ],
             'profile_image' => [
                 'nullable',

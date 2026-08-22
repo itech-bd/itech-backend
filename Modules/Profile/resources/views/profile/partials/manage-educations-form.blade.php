@@ -2,6 +2,7 @@
     @php
         $routePrefix = $routePrefix ?? 'profile';
         $routeParams = $routeParams ?? [];
+        $educations = collect($educations ?? $user->educations);
     @endphp
 
     <header>
@@ -60,22 +61,21 @@
         </div>
     </form>
 
-    @php
-        $educations = $user->educations->sortByDesc('start_year');
-    @endphp
-
     <div class="mt-8 space-y-4">
-        @forelse($educations as $education)
+        @forelse($educations->sortByDesc('start_year') as $education)
+            @php
+                $educationKey = $education->_key ?? $education->id;
+            @endphp
             <div class="rounded-lg border border-gray-200 p-4">
                 <div class="flex items-start justify-end">
-                    <form method="post" action="{{ route($routePrefix.'.educations.destroy', array_merge($routeParams, ['education' => $education])) }}" onsubmit="return confirm('Delete this education?');">
+                    <form method="post" action="{{ route($routePrefix.'.educations.destroy', array_merge($routeParams, ['education' => $educationKey])) }}" onsubmit="return confirm('Delete this education?');">
                         @csrf
                         @method('delete')
                         <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
                     </form>
                 </div>
 
-                <form method="post" action="{{ route($routePrefix.'.educations.update', array_merge($routeParams, ['education' => $education])) }}" class="mt-3 space-y-3">
+                <form method="post" action="{{ route($routePrefix.'.educations.update', array_merge($routeParams, ['education' => $educationKey])) }}" class="mt-3 space-y-3">
                     @csrf
                     @method('patch')
 

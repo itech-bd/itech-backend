@@ -3,8 +3,10 @@
 namespace Modules\Profile\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\View\View;
+use Modules\Mentors\Models\Mentor;
 
 /**
  * Public (guest) view of a user's profile.
@@ -16,7 +18,11 @@ class PublicProfileController extends Controller
      */
     public function show(string $public_url): View
     {
-        $user = User::query()
+        $user = Student::query()
+            ->where('public_url', $public_url)
+            ->first()
+            ?? Mentor::query()->where('public_url', $public_url)->first()
+            ?? User::query()
             ->whereHas(
                 'profile',
                 fn ($query) => $query->where('public_url', $public_url)

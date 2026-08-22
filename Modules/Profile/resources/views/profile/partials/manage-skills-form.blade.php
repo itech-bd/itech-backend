@@ -2,6 +2,7 @@
     @php
         $routePrefix = $routePrefix ?? 'profile';
         $routeParams = $routeParams ?? [];
+        $skills = collect($skills ?? $user->skills);
     @endphp
 
     <header>
@@ -39,9 +40,10 @@
     </form>
 
     <div class="mt-8 space-y-4">
-        @forelse($user->skills->sortBy('name') as $skill)
+        @forelse($skills->sortBy('name') as $skill)
             @php
-                $level = $skill->pivot?->proficiency_level;
+                $level = $skill->proficiency_level ?? $skill->pivot?->proficiency_level;
+                $skillKey = $skill->_key ?? $skill->id;
             @endphp
 
             <div class="rounded-lg border border-gray-200 p-4">
@@ -51,14 +53,14 @@
                         <div class="mt-1 text-xs text-gray-500">Current level: {{ ucfirst($level) }}</div>
                     </div>
 
-                    <form method="post" action="{{ route($routePrefix.'.skills.destroy', array_merge($routeParams, ['skill' => $skill])) }}" onsubmit="return confirm('Remove this skill?');">
+                    <form method="post" action="{{ route($routePrefix.'.skills.destroy', array_merge($routeParams, ['skill' => $skillKey])) }}" onsubmit="return confirm('Remove this skill?');">
                         @csrf
                         @method('delete')
                         <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Remove</button>
                     </form>
                 </div>
 
-                <form method="post" action="{{ route($routePrefix.'.skills.update', array_merge($routeParams, ['skill' => $skill])) }}" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <form method="post" action="{{ route($routePrefix.'.skills.update', array_merge($routeParams, ['skill' => $skillKey])) }}" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                     @csrf
                     @method('patch')
 

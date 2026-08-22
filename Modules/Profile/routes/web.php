@@ -9,7 +9,7 @@ Route::middleware('frontend.locale')
     ->get('/p/{public_url}', [PublicProfileController::class, 'show'])
     ->name('profile.public.show');
 
-Route::middleware(['auth', 'backend.locale'])->group(
+Route::middleware(['auth:web,student,mentor', 'backend.locale'])->group(
     function () {
         Route::get(
             '/profile',

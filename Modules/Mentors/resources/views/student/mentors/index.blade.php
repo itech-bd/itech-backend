@@ -20,9 +20,9 @@
                     <div class="relative h-24 bg-gradient-to-br from-[#2E3192] via-[#252879] to-[#151748]">
                         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(244,123,32,.45),transparent_38%)]"></div>
                         <div class="absolute -bottom-9 left-5">
-                            @if($mentor->user)
+                            @if($mentor->profile_image_url)
                                 <div class="rounded-3xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
-                                    <x-avatar :user="$mentor->user" size="h-16 w-16" text="text-lg" />
+                                    <x-avatar :user="$mentor" size="h-16 w-16" text="text-lg" />
                                 </div>
                             @else
                                 <div class="grid h-20 w-20 place-items-center rounded-3xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
@@ -49,13 +49,11 @@
                             <p class="mt-4 line-clamp-4 text-sm leading-6 text-slate-500">This mentor is assigned to support your batch learning and class progress.</p>
                         @endif
 
-                        @if($mentor->user)
-                            <div class="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                                <div class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Contact</div>
-                                <div class="mt-2 text-sm font-bold text-slate-950">{{ $mentor->user->name }}</div>
-                                <div class="mt-1 break-all text-sm text-slate-500">{{ $mentor->user->email }}</div>
-                            </div>
-                        @endif
+                        <div class="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                            <div class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Contact</div>
+                            <div class="mt-2 text-sm font-bold text-slate-950">{{ $mentor->name }}</div>
+                            <div class="mt-1 break-all text-sm text-slate-500">{{ $mentor->email ?? 'Email not set' }}</div>
+                        </div>
                     </div>
                 </article>
             @endforeach

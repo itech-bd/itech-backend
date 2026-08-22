@@ -3,7 +3,7 @@
 namespace Modules\Mentors\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +30,7 @@ class MyMentorsController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        abort_unless($user instanceof User, 403);
+        abort_unless($user instanceof Student, 403);
 
         $batchIds = DB::table('batch_students')
             ->where('student_id', $user->id)
@@ -39,18 +39,7 @@ class MyMentorsController extends Controller
 
         $mentors = Mentor::query()
             ->where('is_active', true)
-            ->whereHas(
-                'user',
-                function ($query) use ($batchIds) {
-                    $query->whereHas(
-                        'mentorBatches',
-                        function ($batchQuery) use ($batchIds) {
-                            $batchQuery->whereIn('batches.id', $batchIds);
-                        }
-                    );
-                }
-            )
-            ->with(['user:id,name,email'])
+            ->whereHas('batches', fn ($query) => $query->whereIn('batches.id', $batchIds))
             ->orderBy('name')
             ->paginate(12)
             ->withQueryString();

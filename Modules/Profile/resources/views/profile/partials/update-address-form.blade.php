@@ -14,7 +14,7 @@
         @method('put')
 
         @php
-            $address = $user->address;
+            $address = $address ?? $user->address;
         @endphp
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

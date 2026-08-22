@@ -4,8 +4,52 @@
 
 @section('content')
     @php
-        $profile = $user->profile;
-        $address = $user->address;
+        $isFlatAccount = $user instanceof \App\Models\Student || $user instanceof \Modules\Mentors\Models\Mentor;
+
+        $profile = $isFlatAccount
+            ? (object) [
+                'gender' => $user->gender,
+                'date_of_birth' => $user->date_of_birth,
+                'mobile_number' => $user->mobile_number,
+                'father_name' => $user->father_name,
+                'mother_name' => $user->mother_name,
+                'bio' => $user->bio,
+                'public_url' => $user->public_url,
+            ]
+            : $user->profile;
+
+        $address = $isFlatAccount
+            ? (object) [
+                'house_number' => $user->house_number,
+                'street' => $user->street,
+                'city' => $user->city,
+                'post_office' => $user->post_office,
+                'zip_code' => $user->zip_code,
+                'country' => $user->country,
+            ]
+            : $user->address;
+
+        if ($isFlatAccount && ! collect((array) $address)->filter()->count()) {
+            $address = null;
+        }
+
+        $skills = $isFlatAccount
+            ? collect($user->skills ?? [])->map(fn ($skill) => (object) [
+                'name' => data_get($skill, 'name'),
+                'proficiency_level' => data_get($skill, 'proficiency_level'),
+            ])
+            : $user->skills;
+
+        $educations = $isFlatAccount
+            ? collect($user->educations ?? [])->map(fn ($edu) => (object) $edu)
+            : $user->educations;
+
+        $experiences = $isFlatAccount
+            ? collect($user->experiences ?? [])->map(fn ($exp) => (object) array_merge((array) $exp, [
+                'start_date' => data_get($exp, 'start_date') ? \Illuminate\Support\Carbon::parse(data_get($exp, 'start_date')) : null,
+                'end_date' => data_get($exp, 'end_date') ? \Illuminate\Support\Carbon::parse(data_get($exp, 'end_date')) : null,
+            ]))
+            : $user->experiences;
 
         $genderLabel = match ($profile?->gender) {
             'male' => 'Male',
@@ -192,11 +236,11 @@
                             <div class="text-xs text-white/50">{{ __('Level') }}</div>
                         </div>
 
-                        @if ($user->skills && $user->skills->count())
+                        @if ($skills && $skills->count())
                             <div class="mt-5 space-y-4">
-                                @foreach ($user->skills as $skill)
+                                @foreach ($skills as $skill)
                                     @php
-                                        $level = $skill->pivot?->proficiency_level;
+                                        $level = $skill->proficiency_level ?? $skill->pivot?->proficiency_level;
                                         $pct = $level ? ($proficiencyWidth[$level] ?? 0) : 0;
                                     @endphp
                                     <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
@@ -225,10 +269,10 @@
                     <div class="px-6 py-6">
                         <h2 class="text-sm font-semibold tracking-wide text-white/80">{{ __('Education') }}</h2>
 
-                        @if ($user->educations && $user->educations->count())
+                        @if ($educations && $educations->count())
                             <div class="mt-5">
                                 <ol class="relative border-s border-white/10">
-                                    @foreach ($user->educations as $edu)
+                                    @foreach ($educations as $edu)
                                         <li class="ms-6 pb-6">
                                             <span class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400"></span>
                                             <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
@@ -274,10 +318,10 @@
                     <div class="px-6 py-6">
                         <h2 class="text-sm font-semibold tracking-wide text-white/80">{{ __('Experience') }}</h2>
 
-                        @if ($user->experiences && $user->experiences->count())
+                        @if ($experiences && $experiences->count())
                             <div class="mt-5">
                                 <ol class="relative border-s border-white/10">
-                                    @foreach ($user->experiences as $exp)
+                                    @foreach ($experiences as $exp)
                                         <li class="ms-6 pb-6">
                                             <span class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full bg-gradient-to-r from-cyan-400 to-indigo-400"></span>
                                             <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">

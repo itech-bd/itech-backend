@@ -2,9 +2,9 @@
 
 @php
 
-    $name = (string) ($mentor->name ?: optional($mentor->user)->name ?: 'Mentor');
+    $name = (string) ($mentor->name ?: 'Mentor');
     $topic = (string) ($mentor->topic ?: 'Professional Mentor');
-    $imagePath = optional($mentor->user)->profile_image;
+    $imagePath = $mentor->profile_image;
     $imageUrl = is_string($imagePath) && trim($imagePath) !== '' ? \Illuminate\Support\Facades\Storage::disk('public')->url(ltrim($imagePath, '/')) : null;
     $initials = collect(explode(' ', $name))->filter()->take(2)->map(fn ($part) => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($part, 0, 1)))->implode('');
     $routeKey = $mentor->public_route_key ?? ($mentor->slug ?: $mentor->id);

@@ -7,7 +7,7 @@
     </header>
 
     @php
-        $profile = $user->profile;
+        $profile = $profile ?? $user->profile;
         $publicUrl = $profile?->public_url;
         $publicLink = $publicUrl ? route('profile.public.show', ['public_url' => $publicUrl]) : null;
     @endphp

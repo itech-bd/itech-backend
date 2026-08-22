@@ -2,6 +2,7 @@
     @php
         $routePrefix = $routePrefix ?? 'profile';
         $routeParams = $routeParams ?? [];
+        $experiences = collect($experiences ?? $user->experiences);
     @endphp
 
     <header>
@@ -54,22 +55,21 @@
         </div>
     </form>
 
-    @php
-        $experiences = $user->experiences->sortByDesc('start_date');
-    @endphp
-
     <div class="mt-8 space-y-4">
-        @forelse($experiences as $experience)
+        @forelse($experiences->sortByDesc('start_date') as $experience)
+            @php
+                $experienceKey = $experience->_key ?? $experience->id;
+            @endphp
             <div class="rounded-lg border border-gray-200 p-4">
                 <div class="flex items-start justify-end">
-                    <form method="post" action="{{ route($routePrefix.'.experiences.destroy', array_merge($routeParams, ['experience' => $experience])) }}" onsubmit="return confirm('Delete this experience?');">
+                    <form method="post" action="{{ route($routePrefix.'.experiences.destroy', array_merge($routeParams, ['experience' => $experienceKey])) }}" onsubmit="return confirm('Delete this experience?');">
                         @csrf
                         @method('delete')
                         <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
                     </form>
                 </div>
 
-                <form method="post" action="{{ route($routePrefix.'.experiences.update', array_merge($routeParams, ['experience' => $experience])) }}" class="mt-3 space-y-3">
+                <form method="post" action="{{ route($routePrefix.'.experiences.update', array_merge($routeParams, ['experience' => $experienceKey])) }}" class="mt-3 space-y-3">
                     @csrf
                     @method('patch')
 

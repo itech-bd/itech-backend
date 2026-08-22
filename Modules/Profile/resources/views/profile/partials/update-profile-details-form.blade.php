@@ -14,7 +14,7 @@
         @method('patch')
 
         @php
-            $profile = $user->profile;
+            $profile = $profile ?? $user->profile;
         @endphp
 
         <div>

@@ -2,9 +2,9 @@
 
 namespace Modules\Profile\Http\Requests;
 
+use App\Support\Accounts;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class PublicUrlUpdateRequest extends FormRequest
 {
@@ -22,8 +22,7 @@ class PublicUrlUpdateRequest extends FormRequest
                 'min:3',
                 'max:50',
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('user_profiles', 'public_url')
-                    ->ignore($this->user()?->id, 'user_id'),
+                ...Accounts::publicUrlUniqueRules($this->user()),
             ],
         ];
     }

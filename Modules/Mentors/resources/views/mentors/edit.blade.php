@@ -1,6 +1,6 @@
 <x-app-layout>
     @php
-        $currentImageUrl = optional($mentor->user)->profile_image_url;
+        $currentImageUrl = $mentor->profile_image_url;
     @endphp
 
     <x-slot name="header">
@@ -33,7 +33,7 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-extrabold text-slate-700">Email</label>
-                            <input type="email" name="email" value="{{ old('email', optional($mentor->user)->email) }}" class="mt-1 w-full rounded-xl border-slate-300 font-semibold focus:border-[#2E3192] focus:ring-[#2E3192]" placeholder="mentor@example.com" required />
+                            <input type="email" name="email" value="{{ old('email', $mentor->email) }}" class="mt-1 w-full rounded-xl border-slate-300 font-semibold focus:border-[#2E3192] focus:ring-[#2E3192]" placeholder="mentor@example.com" required />
                             @error('email') <p class="mt-1 text-sm font-semibold text-rose-600">{{ $message }}</p> @enderror
                         </div>
 

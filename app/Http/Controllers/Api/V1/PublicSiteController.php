@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\FrontendPage;
 use App\Models\FrontendSection;
 use App\Models\FrontendSetting;
+use App\Models\Student;
 use App\Models\User;
 use App\Support\TextEncoding;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,7 +93,6 @@ class PublicSiteController extends ApiController
 
         $mentors = Schema::hasTable('mentors')
             ? Mentor::query()
-                ->with('user:id,name,email,profile_image')
                 ->where('is_active', true)
                 ->latest('id')
                 ->limit(8)
@@ -221,7 +221,6 @@ class PublicSiteController extends ApiController
         abort_unless(Schema::hasTable('mentors'), 404);
 
         $query = Mentor::query()
-            ->with('user:id,name,email,profile_image')
             ->where('is_active', true)
             ->latest('id');
 
@@ -254,18 +253,6 @@ class PublicSiteController extends ApiController
         $model = $query->firstOrFail();
         abort_unless($model->is_active, 404);
 
-        $model->load([
-            'user' => fn ($query) => $query
-                ->select(['id', 'name', 'email', 'profile_image'])
-                ->with([
-                    'profile',
-                    'address',
-                    'educations' => fn ($q) => $q->orderByDesc('end_year')->orderByDesc('start_year'),
-                    'experiences' => fn ($q) => $q->orderByDesc('end_date')->orderByDesc('start_date'),
-                    'skills' => fn ($q) => $q->orderBy('name'),
-                ]),
-        ]);
-
         $related = $this->relatedCoursesForMentor($model);
 
         return $this->success([
@@ -276,22 +263,10 @@ class PublicSiteController extends ApiController
 
     public function publicProfile(string $publicUrl): JsonResponse
     {
-        $user = User::query()
-            ->whereHas('profile', fn ($query) => $query->where('public_url', $publicUrl))
-            ->with([
-                'profile',
-                'address',
-                'educations' => fn ($query) => $query
-                    ->orderByDesc('end_year')
-                    ->orderByDesc('start_year')
-                    ->orderByDesc('id'),
-                'experiences' => fn ($query) => $query
-                    ->orderByDesc('end_date')
-                    ->orderByDesc('start_date')
-                    ->orderByDesc('id'),
-                'skills' => fn ($query) => $query->orderBy('name'),
-            ])
-            ->firstOrFail();
+        $user = Student::query()
+            ->where('public_url', $publicUrl)
+            ->first()
+            ?? Mentor::query()->where('public_url', $publicUrl)->firstOrFail();
 
         return $this->success([
             'user' => [
@@ -300,15 +275,11 @@ class PublicSiteController extends ApiController
                 'email' => $user->email,
                 'profile_image_url' => $user->profile_image_url,
             ],
-            'details' => $user->profile,
-            'address' => $user->address,
-            'educations' => $user->educations,
-            'experiences' => $user->experiences,
-            'skills' => $user->skills->map(fn ($skill) => [
-                'id' => $skill->id,
-                'name' => $skill->name,
-                'proficiency_level' => $skill->pivot?->proficiency_level,
-            ])->values(),
+            'details' => $this->accountDetailsPayload($user),
+            'address' => $this->accountAddressPayload($user),
+            'educations' => collect($user->educations ?? [])->values(),
+            'experiences' => collect($user->experiences ?? [])->values(),
+            'skills' => collect($user->skills ?? [])->values(),
         ]);
     }
 
@@ -375,7 +346,7 @@ class PublicSiteController extends ApiController
             'phone' => $data['phone'],
             'subject' => $data['subject'],
             'message' => $data['message'],
-            'user_id' => $request->user()?->id,
+            'user_id' => $request->user() instanceof User ? $request->user()->id : null,
             'ip_address' => $request->ip(),
             'user_agent' => Str::limit((string) $request->userAgent(), 1000, ''),
         ]);
@@ -631,24 +602,46 @@ class PublicSiteController extends ApiController
             'name' => $mentor->name,
             'topic' => $mentor->topic,
             'bio' => $mentor->bio,
-            'profile_image_url' => $mentor->user?->profile_image_url,
+            'profile_image_url' => $mentor->profile_image_url,
         ];
 
-        if ($detailed && $mentor->user) {
-            $user = $mentor->user;
-            $payload['email'] = $user->email;
-            $payload['profile'] = $user->profile;
-            $payload['address'] = $user->address;
-            $payload['educations'] = $user->educations;
-            $payload['experiences'] = $user->experiences;
-            $payload['skills'] = $user->skills->map(fn ($skill) => [
-                'id' => $skill->id,
-                'name' => $skill->name,
-                'proficiency_level' => $skill->pivot?->proficiency_level,
-            ])->values();
+        if ($detailed) {
+            $payload['email'] = $mentor->email;
+            $payload['profile'] = $this->accountDetailsPayload($mentor);
+            $payload['address'] = $this->accountAddressPayload($mentor);
+            $payload['educations'] = collect($mentor->educations ?? [])->values();
+            $payload['experiences'] = collect($mentor->experiences ?? [])->values();
+            $payload['skills'] = collect($mentor->skills ?? [])->values();
         }
 
         return $payload;
+    }
+
+    private function accountDetailsPayload(Student|Mentor $account): array
+    {
+        return [
+            'gender' => $account->gender,
+            'date_of_birth' => $account->date_of_birth?->toDateString(),
+            'mobile_number' => $account->mobile_number,
+            'father_name' => $account->father_name,
+            'father_mobile' => $account->father_mobile,
+            'mother_name' => $account->mother_name,
+            'mother_mobile' => $account->mother_mobile,
+            'bio' => $account->bio,
+            'public_url' => $account->public_url,
+        ];
+    }
+
+    private function accountAddressPayload(Student|Mentor $account): array
+    {
+        return [
+            'house_number' => $account->house_number,
+            'street' => $account->street,
+            'city' => $account->city,
+            'post_office' => $account->post_office,
+            'zip_code' => $account->zip_code,
+            'country' => $account->country,
+        ];
     }
 
     private function reviewPayload(Review $review): array
