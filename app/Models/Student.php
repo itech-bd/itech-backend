@@ -1,29 +1,35 @@
 <?php
 
-namespace Modules\Mentors\Models;
+namespace App\Models;
 
 use App\Notifications\VerifyEmailNotification;
-use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Batch\Models\Batch;
+use Modules\Course\Models\CourseOrder;
+use Modules\Profile\Models\Address;
+use Modules\Profile\Models\Education;
+use Modules\Profile\Models\Experience;
+use Modules\Profile\Models\UserProfile;
 
-class Mentor extends Authenticatable implements MustVerifyEmail
+class Student extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'user_id',
+        'legacy_user_id',
         'name',
         'email',
         'email_verified_at',
@@ -31,9 +37,6 @@ class Mentor extends Authenticatable implements MustVerifyEmail
         'password',
         'must_change_password',
         'remember_token',
-        'slug',
-        'topic',
-        'bio',
         'gender',
         'date_of_birth',
         'mobile_number',
@@ -41,6 +44,7 @@ class Mentor extends Authenticatable implements MustVerifyEmail
         'father_mobile',
         'mother_name',
         'mother_mobile',
+        'bio',
         'public_url',
         'house_number',
         'street',
@@ -51,7 +55,6 @@ class Mentor extends Authenticatable implements MustVerifyEmail
         'skills',
         'educations',
         'experiences',
-        'is_active',
     ];
 
     protected $hidden = [
@@ -69,39 +72,64 @@ class Mentor extends Authenticatable implements MustVerifyEmail
             'skills' => 'array',
             'educations' => 'array',
             'experiences' => 'array',
-            'is_active' => 'boolean',
         ];
     }
 
-    public function user(): BelongsTo
+    public function legacyUser(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'legacy_user_id');
+    }
+
+    public function profile(): HasOne
+    {
+        return $this->hasOne(UserProfile::class, 'user_id', 'legacy_user_id');
+    }
+
+    public function address(): HasOne
+    {
+        return $this->hasOne(Address::class, 'user_id', 'legacy_user_id');
+    }
+
+    public function legacyEducations(): HasMany
+    {
+        return $this->hasMany(Education::class, 'user_id', 'legacy_user_id');
+    }
+
+    public function legacyExperiences(): HasMany
+    {
+        return $this->hasMany(Experience::class, 'user_id', 'legacy_user_id');
     }
 
     public function batches(): BelongsToMany
     {
-        return $this->belongsToMany(Batch::class, 'batch_mentors', 'mentor_id', 'batch_id')
+        return $this->belongsToMany(Batch::class, 'batch_students', 'student_id', 'batch_id')
+            ->withPivot(['status', 'batch_type', 'approved_at', 'approved_by'])
             ->withTimestamps();
     }
 
-    public function mentorBatches(): BelongsToMany
+    public function studentBatches(): BelongsToMany
     {
         return $this->batches();
     }
 
+    public function courseOrders(): HasMany
+    {
+        return $this->hasMany(CourseOrder::class, 'student_id');
+    }
+
     public function getRoleNames(): Collection
     {
-        return collect(['mentor']);
+        return collect(['student']);
     }
 
     public function hasRole($roles, ?string $guard = null): bool
     {
-        return in_array('mentor', Arr::wrap($roles), true);
+        return in_array('student', Arr::wrap($roles), true);
     }
 
     public function hasAnyRole(...$roles): bool
     {
-        return collect($roles)->flatten()->contains('mentor');
+        return collect($roles)->flatten()->contains('student');
     }
 
     public function hasAnyPermission(...$permissions): bool
@@ -112,13 +140,6 @@ class Mentor extends Authenticatable implements MustVerifyEmail
     public function getAllPermissions(): Collection
     {
         return collect();
-    }
-
-    public function getPublicRouteKeyAttribute(): string
-    {
-        $slug = trim((string) ($this->slug ?? ''));
-
-        return $slug !== '' ? $slug : (string) $this->getKey();
     }
 
     public function getProfileImageUrlAttribute(): ?string

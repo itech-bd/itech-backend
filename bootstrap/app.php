@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 use App\Http\Middleware\ForceEnglishLocale;
+use App\Http\Middleware\EnsureAccountType;
 use App\Http\Middleware\SetApiLocale;
 use App\Http\Middleware\SetFrontendLocale;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'frontend.locale' => SetFrontendLocale::class,
                     'api.locale' => SetApiLocale::class,
                     'backend.locale' => ForceEnglishLocale::class,
+                    'account' => EnsureAccountType::class,
                     'role' => RoleMiddleware::class,
                     'permission' => PermissionMiddleware::class,
                     'role_or_permission' => RoleOrPermissionMiddleware::class,
