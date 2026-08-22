@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Student;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 /**
- * Create sample student users.
+ * Create sample student accounts.
  */
 class StudentsSeeder extends Seeder
 {
@@ -33,18 +34,15 @@ class StudentsSeeder extends Seeder
         foreach ($demo as $i => $name) {
             $email = 'student'.($i + 1).'@example.com';
 
-            $user = User::query()->firstOrCreate(
+            Student::query()->updateOrCreate(
                 ['email' => $email],
                 [
                     'name' => $name,
                     'password' => '12345678',
                     'must_change_password' => true,
+                    'email_verified_at' => Carbon::now(),
                 ]
             );
-
-            if (! $user->hasRole('student')) {
-                $user->assignRole('student');
-            }
         }
     }
 }

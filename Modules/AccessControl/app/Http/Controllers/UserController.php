@@ -3,6 +3,7 @@
 namespace Modules\AccessControl\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -10,6 +11,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Modules\Course\Models\CourseOrder;
 use Modules\Invoice\Support\InvoicePdf;
+use Modules\Mentors\Models\Mentor;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -47,34 +49,32 @@ class UserController extends Controller implements HasMiddleware
             $roleFilter = request()->string('role')->trim()->lower()->value();
             $allowedRoles = ['student', 'mentor', 'admin'];
             if (!in_array($roleFilter, $allowedRoles, true)) {
-                $roleFilter = null;
+                $roleFilter = 'admin';
             }
 
-            $query = User::query()
-                ->with(['roles:id,name'])
-                ->select(['id', 'name', 'email', 'created_at'])
-                ->latest();
-
-            if ($roleFilter) {
-                $query->whereHas(
-                    'roles',
-                    fn ($rolesQuery) => $rolesQuery->where('name', $roleFilter)
-                );
-            }
+            $query = match ($roleFilter) {
+                'student' => Student::query()->select(['id', 'name', 'email', 'created_at'])->latest(),
+                'mentor' => Mentor::query()->select(['id', 'name', 'email', 'created_at'])->latest(),
+                default => User::query()
+                    ->role('admin')
+                    ->with(['roles:id,name'])
+                    ->select(['id', 'name', 'email', 'created_at'])
+                    ->latest(),
+            };
 
             return DataTables::eloquent($query)
                 ->addIndexColumn()
                 ->addColumn(
                     'registration_date',
-                    fn (User $user) => $this->_renderRegistrationDate($user)
+                    fn ($account) => $this->_renderRegistrationDate($account)
                 )
                 ->addColumn(
                     'roles',
-                    fn (User $user) => $this->_renderRolesBadges($user)
+                    fn ($account) => $this->_renderRolesBadges($account, $roleFilter)
                 )
                 ->addColumn(
                     'actions',
-                    fn (User $user) => $this->_renderActions($user)
+                    fn ($account) => $this->_renderActions($account, $roleFilter)
                 )
                 ->rawColumns(['roles', 'actions'])
                 ->toJson();
@@ -198,22 +198,19 @@ class UserController extends Controller implements HasMiddleware
     /**
      * List a student's invoices (admin view under Users section).
      *
-     * @param User    $user    Student user.
+     * @param Student $user    Student account.
      * @param Request $request Incoming request.
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function invoices(User $user, Request $request)
+    public function invoices(Student $user, Request $request)
     {
-        $user->loadMissing(['roles:id,name']);
-        abort_unless($user->roles->contains('name', 'student'), 404);
-
         $status = $request->string('status')->lower()->value();
         $allowedStatuses = ['pending', 'paid', 'cancelled'];
         $activeStatus = in_array($status, $allowedStatuses, true) ? $status : null;
 
         $ordersQuery = CourseOrder::query()
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
             ->with(['course:id,title', 'batch:id,name'])
             ->orderByDesc('id');
 
@@ -236,17 +233,14 @@ class UserController extends Controller implements HasMiddleware
      /**
       * View a student's invoice (admin view under Users section).
       *
-      * @param User        $user  Student user.
+      * @param Student     $user  Student account.
       * @param CourseOrder $order Invoice/order.
       *
       * @return \Illuminate\Contracts\View\View
       */
-    public function invoiceShow(User $user, CourseOrder $order)
+    public function invoiceShow(Student $user, CourseOrder $order)
     {
-        $user->loadMissing(['roles:id,name']);
-        abort_unless($user->roles->contains('name', 'student'), 404);
-
-        if ((int) $order->user_id !== (int) $user->id) {
+        if ((int) $order->student_id !== (int) $user->id) {
             abort(404);
         }
 
@@ -270,17 +264,14 @@ class UserController extends Controller implements HasMiddleware
          /**
             * Download a student's invoice as PDF (admin view under Users section).
             *
-            * @param User        $user  Student user.
+            * @param Student     $user  Student account.
             * @param CourseOrder $order Invoice/order.
             *
             * @return \Symfony\Component\HttpFoundation\Response
             */
-    public function invoiceDownload(User $user, CourseOrder $order)
+    public function invoiceDownload(Student $user, CourseOrder $order)
     {
-        $user->loadMissing(['roles:id,name']);
-        abort_unless($user->roles->contains('name', 'student'), 404);
-
-        if ((int) $order->user_id !== (int) $user->id) {
+        if ((int) $order->student_id !== (int) $user->id) {
             abort(404);
         }
 
@@ -297,13 +288,20 @@ class UserController extends Controller implements HasMiddleware
     /**
      * Render role badges HTML for DataTables.
      *
-     * @param User $user User row.
+     * @param mixed  $account Account row.
+     * @param string $type    Account type.
      *
      * @return string
      */
-    private function _renderRolesBadges(User $user): string
+    private function _renderRolesBadges(mixed $account, string $type): string
     {
-        $roles = $user->roles ?? collect();
+        if ($type !== 'admin') {
+            return '<span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">'
+                . e($type)
+                . '</span>';
+        }
+
+        $roles = $account->roles ?? collect();
         if ($roles->isEmpty()) {
             return '<span class="text-sm text-gray-500">-</span>';
         }
@@ -322,39 +320,53 @@ class UserController extends Controller implements HasMiddleware
     /**
      * Render formatted registration date.
      *
-     * @param User $user User row.
+     * @param mixed $account Account row.
      *
      * @return string
      */
-    private function _renderRegistrationDate(User $user): string
+    private function _renderRegistrationDate(mixed $account): string
     {
-        return optional($user->created_at)->format('d M Y, h:i A');
+        return optional($account->created_at)->format('d M Y, h:i A');
     }
 
     /**
      * Render actions HTML for DataTables.
      *
-     * @param User $user User row.
+     * @param mixed  $account Account row.
+     * @param string $type    Account type.
      *
      * @return string
      */
-    private function _renderActions(User $user): string
+    private function _renderActions(mixed $account, string $type): string
     {
-        $roleFilter = request()->string('role')->trim()->lower()->value();
+        if ($type === 'student') {
+            $invoicesUrl = route('users.invoices.index', $account);
 
-        $editUrl = route('users.edit', $user);
-        $profileUrl = route('admin.users.profile.edit', $user);
-
-        $invoicesHtml = '';
-        if ($roleFilter === 'student') {
-            $invoicesUrl = route('users.invoices.index', $user);
-            $invoicesHtml = '<a href="' . e($invoicesUrl) . '" class="'
+            return '<div class="inline-flex items-center gap-2">'
+                . '<a href="' . e($invoicesUrl) . '" class="'
                 . 'inline-flex items-center px-3 py-1.5 bg-emerald-600 '
                 . 'border border-transparent rounded-md font-semibold text-xs '
                 . 'text-white uppercase tracking-widest hover:bg-emerald-500 '
                 . 'focus:outline-none focus:ring-2 focus:ring-emerald-500 '
-                . 'focus:ring-offset-2 transition">Invoices</a>';
+                . 'focus:ring-offset-2 transition">Invoices</a>'
+                . '</div>';
         }
+
+        if ($type === 'mentor') {
+            $editUrl = route('dashboard.mentors.edit', $account);
+
+            return '<div class="inline-flex items-center gap-2">'
+                . '<a href="' . e($editUrl) . '" class="'
+                . 'inline-flex items-center px-3 py-1.5 bg-indigo-600 '
+                . 'border border-transparent rounded-md font-semibold text-xs '
+                . 'text-white uppercase tracking-widest hover:bg-indigo-500 '
+                . 'focus:outline-none focus:ring-2 focus:ring-indigo-500 '
+                . 'focus:ring-offset-2 transition">Edit</a>'
+                . '</div>';
+        }
+
+        $editUrl = route('users.edit', $account);
+        $profileUrl = route('admin.users.profile.edit', $account);
 
         return '<div class="inline-flex items-center gap-2">'
             . '<a href="' . e($editUrl) . '" class="'
@@ -369,7 +381,6 @@ class UserController extends Controller implements HasMiddleware
             . 'text-white uppercase tracking-widest hover:bg-indigo-500 '
             . 'focus:outline-none focus:ring-2 focus:ring-indigo-500 '
             . 'focus:ring-offset-2 transition">Profile</a>'
-            . $invoicesHtml
             . '</div>';
     }
 }

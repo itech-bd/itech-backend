@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Modules\Batch\Models\Batch;
+use Modules\Mentors\Models\Mentor;
 
 class BatchAssignmentsAndSchedulesSeeder extends Seeder
 {
@@ -16,8 +18,8 @@ class BatchAssignmentsAndSchedulesSeeder extends Seeder
 
         $createdBy = $admin ? (int) $admin->id : 1;
 
-        $mentors = User::query()->role('mentor')->orderBy('id')->get(['id']);
-        $students = User::query()->role('student')->orderBy('id')->get(['id']);
+        $mentors = Mentor::query()->where('is_active', true)->orderBy('id')->get(['id']);
+        $students = Student::query()->orderBy('id')->get(['id']);
 
         $batches = Batch::query()->with('course:id,title')->orderBy('id')->get();
         if ($batches->isEmpty()) {
@@ -34,7 +36,19 @@ class BatchAssignmentsAndSchedulesSeeder extends Seeder
             // Assign students
             if ($students->isNotEmpty()) {
                 $studentIds = $students->pluck('id')->shuffle()->take(8)->values()->all();
-                $batch->students()->syncWithoutDetaching($studentIds);
+                $studentPayload = collect($studentIds)
+                    ->mapWithKeys(
+                        fn (int $studentId): array => [
+                            $studentId => [
+                                'status' => 'approved',
+                                'approved_at' => Carbon::now(),
+                                'approved_by' => $createdBy,
+                            ],
+                        ]
+                    )
+                    ->all();
+
+                $batch->students()->syncWithoutDetaching($studentPayload);
             }
 
             // Create a handful of schedules

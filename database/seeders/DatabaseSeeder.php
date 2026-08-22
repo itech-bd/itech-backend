@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Student;
 use App\Models\FrontendPage;
 use App\Models\FrontendSection;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
                 $this->call(MentorsSeeder::class);
             }
 
-            if (User::query()->role('student')->count() === 0) {
+            if (Student::query()->count() === 0) {
                 $this->call(StudentsSeeder::class);
             }
 
@@ -79,13 +79,5 @@ class DatabaseSeeder extends Seeder
 
             $this->call(FrontendSettingsSeeder::class);
         }
-
-        User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => '12345678',
-            ]
-        );
     }
 }

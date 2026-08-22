@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Modules\Mentors\Models\Mentor;
 
 class MentorsSeeder extends Seeder
@@ -28,23 +28,13 @@ class MentorsSeeder extends Seeder
         foreach ($demo as $i => $m) {
             $email = 'mentor'.($i + 1).'@example.com';
 
-            $user = User::query()->firstOrCreate(
+            Mentor::query()->updateOrCreate(
                 ['email' => $email],
                 [
                     'name' => $m['name'],
                     'password' => '12345678',
+                    'email_verified_at' => Carbon::now(),
                     'must_change_password' => true,
-                ]
-            );
-
-            if (! $user->hasRole('mentor')) {
-                $user->assignRole('mentor');
-            }
-
-            Mentor::query()->updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'name' => $m['name'],
                     'topic' => $m['topic'],
                     'bio' => $m['bio'],
                     'is_active' => true,

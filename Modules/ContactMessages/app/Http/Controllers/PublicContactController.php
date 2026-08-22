@@ -5,6 +5,7 @@ namespace Modules\ContactMessages\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\FrontendPage;
 use App\Models\FrontendSection;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Schema;
@@ -66,7 +67,7 @@ class PublicContactController extends Controller
 
         ContactMessage::query()->create([
             ...$data,
-            'user_id' => $request->user()?->id,
+            'user_id' => $request->user() instanceof User ? $request->user()->id : null,
             'ip_address' => $request->ip(),
             'user_agent' => Str::limit((string) $request->userAgent(), 1000, ''),
         ]);
