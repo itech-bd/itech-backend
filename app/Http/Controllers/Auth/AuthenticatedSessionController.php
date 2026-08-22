@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\Accounts;
+use Modules\Mentors\Models\Mentor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,7 +106,7 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
         if ($user && ($user->must_change_password ?? false)) {
             try {
-                if (method_exists($user, 'hasRole') && $user->hasRole('mentor')) {
+                if ($user instanceof Mentor || (method_exists($user, 'hasRole') && $user->hasRole('mentor'))) {
                     if ($request->expectsJson()) {
                         return response()->json([
                             'ok' => true,
@@ -173,7 +175,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
+        Accounts::logoutAllGuards();
 
         $request->session()->invalidate();
 

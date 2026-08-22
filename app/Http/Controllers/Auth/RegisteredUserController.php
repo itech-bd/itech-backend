@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Student;
 use App\Rules\Recaptcha;
+use App\Support\Accounts;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
-use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -55,7 +55,7 @@ class RegisteredUserController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', ...Accounts::emailUniqueRules()],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
 
@@ -68,18 +68,11 @@ class RegisteredUserController extends Controller
 
         $request->validate($rules);
 
-        $user = User::create([
+        $user = Student::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        // Default role assignment for new registrations
-        $studentRole = Role::firstOrCreate(
-            ['name' => 'student', 'guard_name' => 'web'],
-            ['name' => 'student', 'guard_name' => 'web'],
-        );
-        $user->assignRole($studentRole);
 
         event(new Registered($user));
 

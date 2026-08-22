@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\Student;
 use App\Models\User;
 use App\Rules\Recaptcha;
+use App\Support\Accounts;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +20,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use RuntimeException;
-use Spatie\Permission\Models\Role;
+use Modules\Mentors\Models\Mentor;
 
 class AuthController extends ApiController
 {
@@ -25,7 +28,7 @@ class AuthController extends ApiController
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', ...Accounts::emailUniqueRules()],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
 
@@ -35,17 +38,11 @@ class AuthController extends ApiController
 
         $data = $request->validate($rules);
 
-        $user = User::query()->create([
+        $user = Student::query()->create([
             'name' => $data['name'],
             'email' => Str::lower($data['email']),
             'password' => Hash::make($data['password']),
         ]);
-
-        $studentRole = Role::firstOrCreate([
-            'name' => 'student',
-            'guard_name' => 'web',
-        ]);
-        $user->assignRole($studentRole);
 
         event(new Registered($user));
 
@@ -80,7 +77,9 @@ class AuthController extends ApiController
             );
         }
 
-        $user = User::query()->where('email', Str::lower($data['email']))->first();
+        $accountMatch = Accounts::findByEmail(Str::lower($data['email']));
+        $user = $accountMatch['account'] ?? null;
+        $guard = (string) ($accountMatch['guard'] ?? 'web');
 
         if (! $user || ! $this->passwordMatches($data['password'], (string) $user->password)) {
             RateLimiter::hit($key, 60);
@@ -105,18 +104,21 @@ class AuthController extends ApiController
             $user->forceFill(['password' => Hash::make($data['password'])])->save();
         }
 
-        if ($request->hasSession()) {
-            Auth::guard('web')->login($user);
+        if ($request->hasSession() && $guard !== 'student') {
+            Auth::guard($guard)->login($user);
+            Auth::shouldUse($guard);
             $request->session()->regenerate();
         }
 
         $token = null;
         if ($request->boolean('issue_token', true)) {
             $tokenName = trim((string) ($data['device_name'] ?? 'nextjs-web')) ?: 'nextjs-web';
-            $token = $user->createToken($tokenName, ['student-panel'])->plainTextToken;
+            $token = $user->createToken($tokenName, [$this->tokenAbilityFor($user)])->plainTextToken;
         }
 
-        $user->loadMissing(['roles', 'permissions']);
+        if ($user instanceof User) {
+            $user->loadMissing(['roles', 'permissions']);
+        }
 
         return $this->success([
             'token_type' => $token ? 'Bearer' : null,
@@ -129,11 +131,15 @@ class AuthController extends ApiController
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->loadMissing([
-            'roles',
-            'permissions',
-            'profile',
-        ]);
+        $user = $request->user();
+
+        if ($user instanceof User) {
+            $user->loadMissing([
+                'roles',
+                'permissions',
+                'profile',
+            ]);
+        }
 
         return $this->success($this->userPayload($user, true));
     }
@@ -148,7 +154,7 @@ class AuthController extends ApiController
         }
 
         if ($request->hasSession()) {
-            Auth::guard('web')->logout();
+            Accounts::logoutAllGuards();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
@@ -161,7 +167,7 @@ class AuthController extends ApiController
         $request->user()->tokens()->delete();
 
         if ($request->hasSession()) {
-            Auth::guard('web')->logout();
+            Accounts::logoutAllGuards();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
@@ -175,7 +181,7 @@ class AuthController extends ApiController
             'email' => ['required', 'email'],
         ]);
 
-        $user = User::query()->where('email', Str::lower($data['email']))->first();
+        $user = Accounts::findByEmail(Str::lower($data['email']))['account'] ?? null;
 
         if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
             $user->sendEmailVerificationNotification();
@@ -187,7 +193,12 @@ class AuthController extends ApiController
     public function forgotPassword(Request $request): JsonResponse
     {
         $data = $request->validate(['email' => ['required', 'email']]);
-        Password::sendResetLink(['email' => Str::lower($data['email'])]);
+        $account = Accounts::findByEmail(Str::lower($data['email']))['account'] ?? null;
+
+        if ($account instanceof Authenticatable) {
+            Password::broker(Accounts::brokerFor($account))
+                ->sendResetLink(['email' => Str::lower($data['email'])]);
+        }
 
         return $this->success(null, 'If the account exists, a password reset link has been sent.');
     }
@@ -200,14 +211,17 @@ class AuthController extends ApiController
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $status = Password::reset(
+        $account = Accounts::findByEmail(Str::lower($data['email']))['account'] ?? null;
+        $broker = $account instanceof Authenticatable ? Accounts::brokerFor($account) : 'students';
+
+        $status = Password::broker($broker)->reset(
             [
                 'email' => Str::lower($data['email']),
                 'password' => $data['password'],
                 'password_confirmation' => $data['password_confirmation'],
                 'token' => $data['token'],
             ],
-            function (User $user, string $password): void {
+            function (Authenticatable $user, string $password): void {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
@@ -260,14 +274,30 @@ class AuthController extends ApiController
             && ! (config('recaptcha.skip_in_testing') && app()->environment('testing'));
     }
 
-    private function loginHandoffUrl(User $user): ?string
+    private function tokenAbilityFor(Authenticatable $user): string
     {
-        if (! $user->hasAnyRole(['admin', 'mentor'])) {
+        return match (true) {
+            $user instanceof Student => 'student-panel',
+            $user instanceof Mentor => 'mentor-panel',
+            default => 'admin-panel',
+        };
+    }
+
+    private function loginHandoffUrl(Authenticatable $user): ?string
+    {
+        if ($user instanceof Student) {
+            return null;
+        }
+
+        if ($user instanceof User && ! $user->hasRole('admin')) {
             return null;
         }
 
         $token = Str::random(64);
-        Cache::put($this->loginHandoffCacheKey($token), $user->id, now()->addMinutes(2));
+        Cache::put($this->loginHandoffCacheKey($token), [
+            'guard' => Accounts::guardFor($user),
+            'id' => $user->getAuthIdentifier(),
+        ], now()->addMinutes(2));
 
         return route('auth.frontend-login-handoff', ['token' => $token]);
     }
@@ -277,10 +307,11 @@ class AuthController extends ApiController
         return 'frontend_login_handoff:'.$token;
     }
 
-    private function userPayload(User $user, bool $includeProfile = false): array
+    private function userPayload(Authenticatable $user, bool $includeProfile = false): array
     {
         $payload = [
-            'id' => $user->id,
+            'id' => $user->getAuthIdentifier(),
+            'type' => Accounts::typeFor($user),
             'name' => $user->name,
             'email' => $user->email,
             'email_verified' => ! is_null($user->email_verified_at),
@@ -289,8 +320,22 @@ class AuthController extends ApiController
             'permissions' => $user->getAllPermissions()->pluck('name')->values(),
         ];
 
-        if ($includeProfile) {
+        if ($includeProfile && $user instanceof User) {
             $payload['profile'] = $user->profile;
+        } elseif ($includeProfile && $user instanceof Student) {
+            $payload['profile'] = [
+                'gender' => $user->gender,
+                'date_of_birth' => $user->date_of_birth?->toDateString(),
+                'mobile_number' => $user->mobile_number,
+                'bio' => $user->bio,
+                'public_url' => $user->public_url,
+            ];
+        } elseif ($includeProfile && $user instanceof Mentor) {
+            $payload['profile'] = [
+                'topic' => $user->topic,
+                'bio' => $user->bio,
+                'public_url' => $user->public_url,
+            ];
         }
 
         return $payload;

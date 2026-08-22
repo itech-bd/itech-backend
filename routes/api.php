@@ -70,7 +70,7 @@ Route::prefix('v1')->middleware('api.locale')->group(function (): void {
             ->name('api.v1.checkout.orders.show');
 
         Route::prefix('student')
-            ->middleware('role:student')
+            ->middleware('account:student')
             ->name('api.v1.student.')
             ->group(function (): void {
                 Route::get('dashboard', StudentDashboardController::class)->name('dashboard');

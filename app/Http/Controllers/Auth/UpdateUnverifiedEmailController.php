@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Support\Accounts;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -30,15 +31,14 @@ class UpdateUnverifiedEmailController extends Controller
                 'email',
                 'max:255',
                 'different:current_email',
-                Rule::unique('users', 'email'),
+                ...Accounts::emailUniqueRules(),
             ],
             'password' => ['required', 'string'],
         ]);
 
-        /** @var \App\Models\User|null $user */
         $user = null;
 
-        if ($authUser instanceof User) {
+        if ($authUser instanceof MustVerifyEmail) {
             if ($authUser->hasVerifiedEmail()) {
                 return redirect()->intended(route('dashboard', absolute: false));
             }
@@ -51,11 +51,9 @@ class UpdateUnverifiedEmailController extends Controller
 
             $user = $authUser;
         } else {
-            $user = User::query()
-                ->where('email', (string) $validated['current_email'])
-                ->first();
+            $user = Accounts::findByEmail((string) $validated['current_email'])['account'] ?? null;
 
-            if (! $user || $user->hasVerifiedEmail()) {
+            if (! $user instanceof MustVerifyEmail || $user->hasVerifiedEmail()) {
                 throw ValidationException::withMessages([
                     'current_email' => [__('frontend.verification_credentials_invalid')],
                 ]);

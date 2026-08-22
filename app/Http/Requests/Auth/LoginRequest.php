@@ -3,9 +3,11 @@
 namespace App\Http\Requests\Auth;
 
 use App\Rules\Recaptcha;
+use App\Support\Accounts;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -56,32 +58,29 @@ class LoginRequest extends FormRequest
 
         $credentials = $this->only('email', 'password');
         $remember = $this->boolean('remember');
-
+        $accountMatch = Accounts::findByEmail((string) ($credentials['email'] ?? ''));
+        $user = $accountMatch['account'] ?? null;
+        $guard = (string) ($accountMatch['guard'] ?? 'web');
         $attempted = false;
 
         try {
-            $attempted = Auth::attempt($credentials, $remember);
+            $attempted = $user instanceof Authenticatable
+                && $this->passwordMatches((string) ($credentials['password'] ?? ''), (string) ($user->password ?? ''));
         } catch (RuntimeException $e) {
             // Fallback for legacy bcrypt hashes (e.g. "$2a$") that may fail strict algorithm checks.
             if (! Str::contains($e->getMessage(), 'Bcrypt algorithm')) {
                 throw $e;
             }
 
-            $provider = Auth::getProvider();
-            $legacyUser = $provider->retrieveByCredentials([
-                'email' => $credentials['email'] ?? null,
-            ]);
-
             $plainPassword = (string) ($credentials['password'] ?? '');
-            $storedHash = (string) ($legacyUser?->password ?? '');
+            $storedHash = (string) ($user?->password ?? '');
 
-            if ($legacyUser && Str::startsWith($storedHash, '$2a$') && password_verify($plainPassword, $storedHash)) {
-                Auth::login($legacyUser, $remember);
+            if ($user && Str::startsWith($storedHash, '$2a$') && password_verify($plainPassword, $storedHash)) {
                 $attempted = true;
 
                 try {
                     if (Hash::needsRehash($storedHash)) {
-                        $legacyUser->forceFill([
+                        $user->forceFill([
                             'password' => Hash::make($plainPassword),
                         ])->save();
                     }
@@ -99,11 +98,10 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        $user = Auth::user();
         if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
             $email = (string) ($user->email ?? '');
 
-            Auth::logout();
+            Auth::guard($guard)->logout();
 
             if ($email !== '') {
                 $this->session()->put('verification_email', $email);
@@ -127,7 +125,23 @@ class LoginRequest extends FormRequest
             throw $exception;
         }
 
+        Auth::guard($guard)->login($user, $remember);
+        Auth::shouldUse($guard);
+
         RateLimiter::clear($this->throttleKey());
+    }
+
+    private function passwordMatches(string $plain, string $hash): bool
+    {
+        try {
+            return Hash::check($plain, $hash);
+        } catch (RuntimeException $exception) {
+            if (! Str::contains($exception->getMessage(), 'Bcrypt algorithm')) {
+                throw $exception;
+            }
+
+            return Str::startsWith($hash, '$2a$') && password_verify($plain, $hash);
+        }
     }
 
     /**

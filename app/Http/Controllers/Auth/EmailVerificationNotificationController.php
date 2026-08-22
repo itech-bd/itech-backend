@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Support\Accounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -22,8 +22,7 @@ class EmailVerificationNotificationController extends Controller
                 'email' => ['required', 'string', 'email'],
             ]);
 
-            /** @var \App\Models\User|null $user */
-            $user = User::query()->where('email', (string) $request->input('email'))->first();
+            $user = Accounts::findByEmail((string) $request->input('email'))['account'] ?? null;
 
             // Always return a generic success response to avoid account enumeration.
             if (! $user || $user->hasVerifiedEmail()) {
