@@ -29,6 +29,7 @@ class AuthController extends ApiController
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', ...Accounts::emailUniqueRules()],
+            'mobile_number' => ['nullable', 'string', 'max:25'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
 
@@ -41,6 +42,7 @@ class AuthController extends ApiController
         $user = Student::query()->create([
             'name' => $data['name'],
             'email' => Str::lower($data['email']),
+            'mobile_number' => filled($data['mobile_number'] ?? null) ? $data['mobile_number'] : null,
             'password' => Hash::make($data['password']),
         ]);
 
