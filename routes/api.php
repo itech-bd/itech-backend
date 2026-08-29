@@ -75,6 +75,8 @@ Route::prefix('v1')->middleware('api.locale')->group(function (): void {
             ->group(function (): void {
                 Route::get('dashboard', StudentDashboardController::class)->name('dashboard');
 
+                Route::get('course-catalog', [StudentCourseController::class, 'catalog'])->name('course-catalog.index');
+
                 Route::get('courses', [StudentCourseController::class, 'index'])->name('courses.index');
                 Route::get('courses/{course}', [StudentCourseController::class, 'show'])->name('courses.show');
 

@@ -138,6 +138,7 @@ class StudentDashboardController extends ApiController
                 ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => '/student'],
                 ['key' => 'profile', 'label' => 'Profile', 'href' => '/student/profile'],
                 ['key' => 'courses', 'label' => 'My Courses', 'href' => '/student/courses'],
+                ['key' => 'explore_courses', 'label' => 'Explore Courses', 'href' => '/student/explore-courses'],
                 ['key' => 'batches', 'label' => 'My Batches', 'href' => '/student/batches'],
                 ['key' => 'mentors', 'label' => 'My Mentors', 'href' => '/student/mentors'],
                 ['key' => 'invoices', 'label' => 'Invoices', 'href' => '/student/invoices'],
