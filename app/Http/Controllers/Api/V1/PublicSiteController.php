@@ -447,7 +447,7 @@ class PublicSiteController extends ApiController
             [
                 'key' => 'solutions',
                 'label' => $isBangla ? 'সমাধান' : 'Solutions',
-                'href' => '/solutions/software-solutions',
+                'href' => '/solutions',
                 'children' => [
                     [
                         'key' => 'software-solutions',
