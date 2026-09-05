@@ -6,6 +6,8 @@
 @php
     $onlinePrice = $course->online_discount_price ?: $course->online_old_price;
     $offlinePrice = $course->offline_discount_price ?: $course->offline_old_price;
+    $availableBatchTypes = $availableBatchTypes ?? [];
+    $selectedBatchType = old('batch_type', $availableBatchTypes[0] ?? '');
 @endphp
 
 <main>
@@ -17,27 +19,40 @@
                 <h1 class="text-2xl font-black text-slate-950">{{ $course->title }}</h1>
                 <p class="mt-2 text-sm leading-6 text-slate-600">{{ __('frontend.checkout_note') }}</p>
 
-                <form method="POST" action="{{ route('checkout.store', $course) }}" class="mt-8 space-y-6" x-data="{ batchType: '{{ old('batch_type', 'online') }}' }">
+                <form method="POST" action="{{ route('checkout.store', $course) }}" class="mt-8 space-y-6" x-data="{ batchType: '{{ $selectedBatchType }}' }">
                     @csrf
 
-                    @if($hasOnlineOfflinePricing)
+                    @if(count($availableBatchTypes) > 1)
                         <div>
                             <label class="block text-sm font-black text-slate-900">{{ __('frontend.select_batch_type') }}</label>
                             <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                @if(in_array('online', $availableBatchTypes, true))
                                 <label class="cursor-pointer rounded-[1.25rem] border border-slate-200 p-4 transition has-[:checked]:border-[#292b86] has-[:checked]:bg-[#292b86]/5">
                                     <input type="radio" name="batch_type" value="online" x-model="batchType" class="text-[#292b86] focus:ring-[#292b86]">
                                     <span class="ml-2 font-black text-slate-950">{{ __('frontend.online') }}</span>
                                     <span class="mt-2 block text-sm text-slate-600">{{ __('frontend.online_class_desc') }}</span>
                                     <span class="mt-3 block text-lg font-black text-[#292b86]">{{ $onlinePrice ? '৳'.number_format((float) $onlinePrice, 0) : 'Contact' }}</span>
                                 </label>
+                                @endif
+                                @if(in_array('offline', $availableBatchTypes, true))
                                 <label class="cursor-pointer rounded-[1.25rem] border border-slate-200 p-4 transition has-[:checked]:border-[#f15a24] has-[:checked]:bg-[#f15a24]/5">
                                     <input type="radio" name="batch_type" value="offline" x-model="batchType" class="text-[#f15a24] focus:ring-[#f15a24]">
                                     <span class="ml-2 font-black text-slate-950">{{ __('frontend.offline') }}</span>
                                     <span class="mt-2 block text-sm text-slate-600">{{ __('frontend.offline_class_desc') }}</span>
                                     <span class="mt-3 block text-lg font-black text-[#f15a24]">{{ $offlinePrice ? '৳'.number_format((float) $offlinePrice, 0) : 'Contact' }}</span>
                                 </label>
+                                @endif
                             </div>
                             @error('batch_type') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+                    @elseif(count($availableBatchTypes) === 1)
+                        <input type="hidden" name="batch_type" value="{{ $availableBatchTypes[0] }}">
+                        <div class="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                            <div class="text-sm font-black text-slate-900">Admission type</div>
+                            <div class="mt-2 flex items-center justify-between gap-3 text-sm">
+                                <span class="font-extrabold text-slate-950">{{ ucfirst($availableBatchTypes[0]) }}</span>
+                                <span class="rounded-full bg-white px-3 py-1 font-bold text-slate-500">Only available option</span>
+                            </div>
                         </div>
                     @endif
 

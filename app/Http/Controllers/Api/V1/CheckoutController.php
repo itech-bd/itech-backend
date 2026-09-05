@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Modules\Batch\Models\Batch;
 use Modules\Course\Models\Course;
 use Modules\Course\Models\CourseOrder;
@@ -27,10 +28,13 @@ class CheckoutController extends ApiController
             ->whereIn('batch_id', $batchIds)
             ->get(['batch_id', 'status', 'batch_type']);
 
+        $availableBatchTypes = $this->availableBatchTypes($course);
+
         return $this->success([
             'course' => $this->coursePayload($course),
-            'requires_batch_type' => $this->hasOnlineOfflinePricing($course),
-            'default_amount' => $this->courseAmount($course),
+            'requires_batch_type' => count($availableBatchTypes) > 1,
+            'available_batch_types' => $availableBatchTypes,
+            'default_amount' => $this->courseAmount($course, $availableBatchTypes[0] ?? null),
             'batches' => $course->batches->map(fn (Batch $batch) => [
                 'id' => $batch->id,
                 'name' => $batch->name,
@@ -48,17 +52,18 @@ class CheckoutController extends ApiController
     {
         abort_unless($course->status === 'active', 404);
 
-        $requiresType = $this->hasOnlineOfflinePricing($course);
+        $availableBatchTypes = $this->availableBatchTypes($course);
+        $requiresType = count($availableBatchTypes) > 1;
         $data = $request->validate([
             'batch_id' => ['nullable', 'integer'],
             'batch_type' => $requiresType
-                ? ['required', 'in:online,offline']
-                : ['nullable', 'in:online,offline'],
+                ? ['required', Rule::in($availableBatchTypes)]
+                : ['nullable', Rule::in($availableBatchTypes)],
         ]);
 
         $userId = (int) $request->user()->id;
         $batchId = (int) ($data['batch_id'] ?? 0);
-        $batchType = $data['batch_type'] ?? null;
+        $batchType = $data['batch_type'] ?? ($availableBatchTypes[0] ?? null);
 
         $hasAvailableBatches = Batch::query()
             ->where('course_id', $course->id)
@@ -218,12 +223,22 @@ class CheckoutController extends ApiController
         return (float) ($course->discount_price ?? $course->old_price ?? 0);
     }
 
-    private function hasOnlineOfflinePricing(Course $course): bool
+    /**
+     * @return array<int, 'online'|'offline'>
+     */
+    private function availableBatchTypes(Course $course): array
     {
-        return ! is_null($course->online_old_price)
-            || ! is_null($course->online_discount_price)
-            || ! is_null($course->offline_old_price)
-            || ! is_null($course->offline_discount_price);
+        $types = [];
+
+        if (! is_null($course->online_old_price) || ! is_null($course->online_discount_price)) {
+            $types[] = 'online';
+        }
+
+        if (! is_null($course->offline_old_price) || ! is_null($course->offline_discount_price)) {
+            $types[] = 'offline';
+        }
+
+        return $types;
     }
 
     private function coursePayload(Course $course): array

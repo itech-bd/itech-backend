@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Batch\Models\Batch;
 use Modules\Course\Models\Course;
@@ -31,8 +32,8 @@ class CheckoutController extends Controller
             },
         ]);
 
-        $hasOnlineOfflinePricing = $this->hasOnlineOfflinePricing($course);
-        $amount = $this->courseAmount($course);
+        $availableBatchTypes = $this->availableBatchTypes($course);
+        $amount = $this->courseAmount($course, $availableBatchTypes[0] ?? null);
 
         $joinedBatchIds = [];
         if ($course->relationLoaded('batches') && $course->batches->count() > 0) {
@@ -45,7 +46,7 @@ class CheckoutController extends Controller
                 ->all();
         }
 
-        return view('pages.checkout', compact('course', 'amount', 'joinedBatchIds', 'hasOnlineOfflinePricing'));
+        return view('pages.checkout', compact('course', 'amount', 'joinedBatchIds', 'availableBatchTypes'));
     }
 
     /**
@@ -58,16 +59,17 @@ class CheckoutController extends Controller
         $userId = (int) Auth::id();
         abort_unless($userId > 0, 403);
 
-        $hasOnlineOfflinePricing = $this->hasOnlineOfflinePricing($course);
+        $availableBatchTypes = $this->availableBatchTypes($course);
+        $requiresBatchType = count($availableBatchTypes) > 1;
 
         $validated = $request->validate([
             'batch_id' => ['nullable', 'integer'],
-            'batch_type' => $hasOnlineOfflinePricing
-                ? ['required', 'in:online,offline']
-                : ['nullable', 'in:online,offline'],
+            'batch_type' => $requiresBatchType
+                ? ['required', Rule::in($availableBatchTypes)]
+                : ['nullable', Rule::in($availableBatchTypes)],
         ]);
 
-        $batchType = $validated['batch_type'] ?? null;
+        $batchType = $validated['batch_type'] ?? ($availableBatchTypes[0] ?? null);
         $amount = $this->courseAmount($course, $batchType);
 
         $batchId = (int) ($validated['batch_id'] ?? 0);
@@ -121,9 +123,9 @@ class CheckoutController extends Controller
 
         if ($existing) {
             if ($selectedBatch && (int) $existing->batch_id !== (int) $selectedBatch->id) {
-                $existing->update(['batch_id' => $selectedBatch->id, 'batch_type' => $batchType]);
+                $existing->update(['batch_id' => $selectedBatch->id, 'batch_type' => $batchType, 'amount' => $amount, 'currency' => 'BDT']);
             } elseif ($batchType !== null && $existing->batch_type !== $batchType) {
-                $existing->update(['batch_type' => $batchType]);
+                $existing->update(['batch_type' => $batchType, 'amount' => $amount, 'currency' => 'BDT']);
             }
 
             if ($selectedBatch) {
@@ -192,12 +194,22 @@ class CheckoutController extends Controller
         return 0.0;
     }
 
-    private function hasOnlineOfflinePricing(Course $course): bool
+    /**
+     * @return array<int, 'online'|'offline'>
+     */
+    private function availableBatchTypes(Course $course): array
     {
-        return !is_null($course->online_old_price)
-            || !is_null($course->online_discount_price)
-            || !is_null($course->offline_old_price)
-            || !is_null($course->offline_discount_price);
+        $types = [];
+
+        if (!is_null($course->online_old_price) || !is_null($course->online_discount_price)) {
+            $types[] = 'online';
+        }
+
+        if (!is_null($course->offline_old_price) || !is_null($course->offline_discount_price)) {
+            $types[] = 'offline';
+        }
+
+        return $types;
     }
 
     private function ensurePendingEnrollment(int $batchId, int $studentId, ?string $batchType = null): void
