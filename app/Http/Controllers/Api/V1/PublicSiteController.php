@@ -65,9 +65,10 @@ class PublicSiteController extends ApiController
         $ongoingBatches = Schema::hasTable('batches')
             ? Batch::query()
                 ->with([
-                    'course:id,title,slug,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
+                    'course:id,title,slug,description,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
                     'mentors:id,name,email,profile_image',
                 ])
+                ->withCount('classSchedules')
                 ->whereIn('status', ['upcoming', 'running'])
                 ->whereDate('start_date', '<=', $today)
                 ->whereDate('end_date', '>=', $today)
@@ -80,9 +81,10 @@ class PublicSiteController extends ApiController
         $upcomingBatches = Schema::hasTable('batches')
             ? Batch::query()
                 ->with([
-                    'course:id,title,slug,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
+                    'course:id,title,slug,description,thumbnail,status,old_price,discount_price,online_old_price,online_discount_price,offline_old_price,offline_discount_price',
                     'mentors:id,name,email,profile_image',
                 ])
+                ->withCount('classSchedules')
                 ->where('status', 'upcoming')
                 ->whereDate('start_date', '>', $today)
                 ->orderBy('start_date')
@@ -115,7 +117,7 @@ class PublicSiteController extends ApiController
         return $this->success([
             'page' => $this->pagePayload('home'),
             'stats' => $this->siteStats(),
-            'popular_courses' => $popularCourses->map(fn (Course $course) => $this->coursePayload($course, true))->values(),
+            'popular_courses' => $popularCourses->map(fn (Course $course) => $this->coursePayload($course, true, true))->values(),
             'course_tracks' => $popularCourses
                 ->groupBy(fn (Course $course): string => $this->courseTrack($course))
                 ->map(fn ($courses, string $track) => [
@@ -363,6 +365,7 @@ class PublicSiteController extends ApiController
             ->with([
                 'batches' => fn ($query) => $query
                     ->whereIn('status', ['upcoming', 'running'])
+                    ->withCount('classSchedules')
                     ->orderBy('start_date')
                     ->orderBy('id'),
             ]);
@@ -562,6 +565,7 @@ class PublicSiteController extends ApiController
             'end_date' => $batch->end_date?->toDateString(),
             'class_days' => $batch->class_days ?: [],
             'class_time' => $batch->class_time,
+            'class_schedules_count' => (int) ($batch->class_schedules_count ?? 0),
             'mentors' => $batch->relationLoaded('mentors')
                 ? $batch->mentors->map(fn ($mentor) => [
                     'id' => $mentor->id,
@@ -573,7 +577,7 @@ class PublicSiteController extends ApiController
         ];
 
         if ($includeCourse && $batch->relationLoaded('course') && $batch->course) {
-            $payload['course'] = $this->coursePayload($batch->course);
+            $payload['course'] = $this->coursePayload($batch->course, false, true);
         }
 
         return $payload;
