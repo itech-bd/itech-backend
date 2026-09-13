@@ -266,29 +266,33 @@
                                         <i class="fa-solid fa-house text-sm"></i>
                                         Home
                                     </a>
-                                    <x-dropdown align="right" width="56">
+                                    <x-dropdown align="right" width="w-56" rounded="rounded-2xl" contentClasses="p-2 bg-white">
                                         <x-slot name="trigger">
-                                            <button class="inline-flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-[#2E3192]/30 hover:shadow-md">
+                                            <button type="button" aria-label="Account options" :aria-expanded="open.toString()" aria-controls="account-dropdown" class="inline-flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-[#2E3192]/30 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                                 <x-avatar :user="Auth::user()" />
                                                 <span class="hidden min-w-0 sm:block">
                                                     <span class="block max-w-40 truncate text-sm font-bold text-slate-900">{{ Auth::user()->name }}</span>
                                                     <span class="block max-w-40 truncate text-xs text-slate-500">{{ Auth::user()->email }}</span>
                                                 </span>
-                                                <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                                                <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
                                             </button>
                                         </x-slot>
 
                                         <x-slot name="content">
-                                            <x-dropdown-link href="/profile">
-                                                {{ __('Profile') }}
-                                            </x-dropdown-link>
-
-                                            <form method="POST" action="/logout">
-                                                @csrf
-                                                <x-dropdown-link href="/logout" onclick="event.preventDefault(); this.closest('form').submit();">
-                                                    {{ __('Log Out') }}
-                                                </x-dropdown-link>
-                                            </form>
+                                            <div id="account-dropdown">
+                                                <a href="/profile" class="group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600">
+                                                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-700 group-hover:bg-indigo-100"><i class="fa-regular fa-user" aria-hidden="true"></i></span>
+                                                    <span><span class="block text-sm font-bold">{{ __('Profile') }}</span><span class="mt-0.5 block text-xs text-slate-500">Account settings</span></span>
+                                                </a>
+                                                <div class="mx-3 my-2 border-t border-slate-100"></div>
+                                                <form method="POST" action="/logout">
+                                                    @csrf
+                                                    <button type="submit" class="group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-600">
+                                                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i></span>
+                                                        {{ __('Log Out') }}
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </x-slot>
                                     </x-dropdown>
                                 </div>
