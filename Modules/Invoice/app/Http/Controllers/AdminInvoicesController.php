@@ -225,28 +225,15 @@ class AdminInvoicesController extends Controller
      */
     private function _renderActions(CourseOrder $order): string
     {
-        $isCompleted = $order->status === 'paid';
-        $next = $isCompleted ? 'pending' : 'completed';
-        $label = $isCompleted ? 'Mark Pending' : 'Mark Completed';
-        $btn = $isCompleted
-            ? 'bg-amber-600 hover:bg-amber-500'
-            : 'bg-emerald-600 hover:bg-emerald-500';
-
-        $action = route('dashboard.admin.invoices.update', $order);
         $download = route('dashboard.admin.invoices.download', $order);
-        $token = csrf_token();
+        $action = $order->status === 'paid'
+            ? route('users.payments.index', $order->student_id)
+            : route('dashboard.admin.payments.create', $order);
+        $label = $order->status === 'paid' ? 'View payments' : 'Record payment';
 
         return '<div class="flex items-center justify-end gap-2">'
-            . '<a href="' . e($download) . '" class="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Download PDF</a>'
-            . '<form method="POST" action="' . e($action) . '">'
-            . '<input type="hidden" name="_token" value="' . e($token) . '">'
-            . '<input type="hidden" name="_method" value="PATCH">'
-            . '<input type="hidden" name="status" value="' . e($next) . '">'
-            . '<button type="submit" class="rounded-md ' . e($btn) . ' px-3 py-2 text-xs font-semibold text-white">'
-            . e($label)
-            . '</button>'
-            . '</form>'
-            . '</div>';
+            . '<a href="'.e($download).'" class="rounded-md border px-3 py-2 text-xs font-semibold">Download PDF</a>'
+            . '<a href="'.e($action).'" class="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">'.e($label).'</a></div>';
     }
 
     public function download(CourseOrder $order)
@@ -266,9 +253,9 @@ class AdminInvoicesController extends Controller
     }
 
     /**
-     * Update an invoice status.
+     * Compatibility endpoint for recording a manual payment.
      *
-     * Accepts "pending" and "completed".
+     * Paid-to-pending changes require an explicit payment reversal.
      * Persists "completed" as "paid".
      *
      * @param Request     $request Incoming request.
@@ -284,17 +271,13 @@ class AdminInvoicesController extends Controller
             ]
         );
 
-        $status = $request->string('status')->lower()->value();
-        $newStatus = match ($status) {
-            'completed', 'paid' => 'paid',
-            default => 'pending',
-        };
-
-        if ($order->status !== $newStatus) {
-            $order->status = $newStatus;
-            $order->save();
+        if ($request->input('status') === 'pending') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => 'Reverse the payment from Payments with a reason to return an invoice to pending.',
+            ]);
         }
+        app(\Modules\Payment\Services\RecordPayment::class)->record($order, $request->user()->id);
 
-        return back()->with('success', 'Invoice status updated successfully.');
+        return back()->with('success', 'Payment recorded successfully.');
     }
 }

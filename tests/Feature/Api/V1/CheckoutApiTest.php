@@ -1,14 +1,13 @@
 <?php
 
+use App\Models\Student;
 use App\Models\User;
 use Modules\Batch\Models\Batch;
 use Modules\Course\Models\Course;
 use Modules\Course\Models\CourseOrder;
-use Spatie\Permission\Models\Role;
 
 it('moves a pending enrollment when the pending order changes batch', function () {
-    $student = User::factory()->create();
-    $student->assignRole(Role::findOrCreate('student', 'web'));
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
     $creator = User::factory()->create();
 
     $course = Course::query()->create([
@@ -43,7 +42,7 @@ it('moves a pending enrollment when the pending order changes batch', function (
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $student->id,
+        'student_id' => $student->id,
         'course_id' => $course->id,
         'batch_id' => $batchOne->id,
         'batch_type' => 'online',
@@ -57,11 +56,11 @@ it('moves a pending enrollment when the pending order changes batch', function (
         'batch_type' => 'online',
     ]);
 
-    $this->actingAs($student)
-        ->postJson('/api/v1/checkout/courses/'.$course->slug, [
-            'batch_id' => $batchTwo->id,
-            'batch_type' => 'online',
-        ])
+    \Laravel\Sanctum\Sanctum::actingAs($student);
+    $this->postJson('/api/v1/checkout/courses/'.$course->slug, [
+        'batch_id' => $batchTwo->id,
+        'batch_type' => 'online',
+    ])
         ->assertCreated()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.batch.id', $batchTwo->id);

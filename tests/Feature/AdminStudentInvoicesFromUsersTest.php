@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Student;
 use App\Models\User;
 use Modules\Course\Models\Course;
 use Modules\Course\Models\CourseOrder;
@@ -12,8 +13,7 @@ it('allows an admin to view a student invoices list under users section', functi
     $admin = User::factory()->create();
     $admin->assignRole($adminRole);
 
-    $student = User::factory()->create();
-    $student->assignRole($studentRole);
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -25,7 +25,7 @@ it('allows an admin to view a student invoices list under users section', functi
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $student->id,
+        'student_id' => $student->id,
         'course_id' => $course->id,
         'amount' => 100,
         'currency' => 'BDT',
@@ -56,11 +56,9 @@ it('returns 404 when admin tries to access an invoice that does not belong to th
     $admin = User::factory()->create();
     $admin->assignRole($adminRole);
 
-    $studentA = User::factory()->create();
-    $studentA->assignRole($studentRole);
+    $studentA = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
-    $studentB = User::factory()->create();
-    $studentB->assignRole($studentRole);
+    $studentB = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -72,7 +70,7 @@ it('returns 404 when admin tries to access an invoice that does not belong to th
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $studentB->id,
+        'student_id' => $studentB->id,
         'course_id' => $course->id,
         'amount' => 250,
         'currency' => 'BDT',

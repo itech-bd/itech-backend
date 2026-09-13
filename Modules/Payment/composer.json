@@ -1,0 +1,1 @@
+{"name":"nwidart/payment","autoload":{"psr-4":{"Modules\\Payment\\":"app/"}}}

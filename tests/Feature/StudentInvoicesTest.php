@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Student;
 use App\Models\User;
 use Modules\Course\Models\Course;
 use Modules\Course\Models\CourseOrder;
@@ -8,8 +9,7 @@ use Spatie\Permission\Models\Role;
 it('allows a student to see their invoice list', function () {
     $studentRole = Role::findOrCreate('student');
 
-    $student = User::factory()->create();
-    $student->assignRole($studentRole);
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -21,14 +21,14 @@ it('allows a student to see their invoice list', function () {
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $student->id,
+        'student_id' => $student->id,
         'course_id' => $course->id,
         'amount' => 100,
         'currency' => 'BDT',
         'status' => 'paid',
     ]);
 
-    $this->actingAs($student)
+    $this->actingAs($student, 'student')
         ->get('/dashboard/student/invoices')
         ->assertOk()
         ->assertSee('Invoices')
@@ -38,11 +38,9 @@ it('allows a student to see their invoice list', function () {
 it('prevents a student from viewing another student invoice', function () {
     $studentRole = Role::findOrCreate('student');
 
-    $studentA = User::factory()->create();
-    $studentA->assignRole($studentRole);
+    $studentA = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
-    $studentB = User::factory()->create();
-    $studentB->assignRole($studentRole);
+    $studentB = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -54,18 +52,18 @@ it('prevents a student from viewing another student invoice', function () {
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $studentA->id,
+        'student_id' => $studentA->id,
         'course_id' => $course->id,
         'amount' => 250,
         'currency' => 'BDT',
         'status' => 'paid',
     ]);
 
-    $this->actingAs($studentB)
+    $this->actingAs($studentB, 'student')
         ->get('/dashboard/student/invoices/'.$order->getRouteKey())
         ->assertForbidden();
 
-    $this->actingAs($studentB)
+    $this->actingAs($studentB, 'student')
         ->get('/dashboard/student/invoices/'.$order->getRouteKey().'/download')
         ->assertForbidden();
 });
@@ -73,8 +71,7 @@ it('prevents a student from viewing another student invoice', function () {
 it('downloads a student invoice as pdf', function () {
     $studentRole = Role::findOrCreate('student');
 
-    $student = User::factory()->create();
-    $student->assignRole($studentRole);
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -86,14 +83,14 @@ it('downloads a student invoice as pdf', function () {
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $student->id,
+        'student_id' => $student->id,
         'course_id' => $course->id,
         'amount' => 199,
         'currency' => 'BDT',
         'status' => 'paid',
     ]);
 
-    $this->actingAs($student)
+    $this->actingAs($student, 'student')
         ->get('/dashboard/student/invoices/'.$order->getRouteKey().'/download')
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');

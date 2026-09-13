@@ -149,7 +149,7 @@ Route::get(
                 'batches' => Batch::query()->count(),
                 'students' => Student::query()->count(),
                 'pending_enrollments' => DB::table('batch_students')->where('status', 'pending')->count(),
-                'paid_revenue' => (float) CourseOrder::query()->where('status', 'paid')->sum('amount'),
+                'paid_revenue' => (float) \Modules\Payment\Models\Payment::query()->where('status', 'successful')->sum('amount'),
                 'pending_invoices' => CourseOrder::query()->where('status', 'pending')->count(),
             ];
 

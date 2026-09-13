@@ -42,6 +42,9 @@
                         {{ $label }}
                     </a>
                 @endforeach
+                <div class="ml-auto shrink-0">
+                    @include('payment::partials.finance-link', ['currentPage' => 'invoices'])
+                </div>
             </div>
 
             <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -85,6 +88,9 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="inline-flex items-center gap-2">
+                                            @if($order->status === 'pending')
+                                                <a href="{{ route('dashboard.admin.payments.create', $order) }}" class="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Record payment</a>
+                                            @endif
                                             <a
                                                 href="{{ route('users.invoices.show', [$student, $order]) }}"
                                                 class="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"

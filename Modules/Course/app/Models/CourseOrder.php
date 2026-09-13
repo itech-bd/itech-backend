@@ -23,6 +23,11 @@ class CourseOrder extends Model
         'amount' => 'decimal:2',
     ];
 
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\Modules\Payment\Models\Payment::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');

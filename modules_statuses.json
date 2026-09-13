@@ -8,5 +8,6 @@
     "Reviews": true,
     "Invoice": true,
     "NewsUpdates": true,
-    "ContactMessages": true
+    "ContactMessages": true,
+    "Payment": true
 }

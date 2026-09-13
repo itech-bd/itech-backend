@@ -258,7 +258,10 @@
                                     </div>
                                 </div>
 
-                                <div class="flex shrink-0 items-center justify-end gap-2 self-end sm:gap-3 xl:pt-1">
+                                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2 self-end sm:gap-3 xl:pt-1">
+                                    @isset($headerActions)
+                                        {{ $headerActions }}
+                                    @endisset
                                     <a href="{{ $frontendHomeUrl }}" class="hidden min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#2E3192]/30 hover:text-[#2E3192] sm:inline-flex">
                                         <i class="fa-solid fa-house text-sm"></i>
                                         Home

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Student;
 use App\Models\User;
 use Modules\Course\Models\Course;
 use Modules\Course\Models\CourseOrder;
@@ -12,8 +13,7 @@ it('allows admin to view all invoices and mark one as completed', function () {
     $admin = User::factory()->create();
     $admin->assignRole($adminRole);
 
-    $student = User::factory()->create();
-    $student->assignRole($studentRole);
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $creator = User::factory()->create();
 
@@ -25,7 +25,7 @@ it('allows admin to view all invoices and mark one as completed', function () {
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $student->id,
+        'student_id' => $student->id,
         'course_id' => $course->id,
         'amount' => 500,
         'currency' => 'BDT',
@@ -58,10 +58,9 @@ it('allows admin to view all invoices and mark one as completed', function () {
 it('prevents non-admin from accessing admin invoices', function () {
     $studentRole = Role::findOrCreate('student');
 
-    $student = User::factory()->create();
-    $student->assignRole($studentRole);
+    $student = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
-    $this->actingAs($student)
+    $this->actingAs($student, 'student')
         ->get('/dashboard/admin/invoices')
         ->assertForbidden();
 });

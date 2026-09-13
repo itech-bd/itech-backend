@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Student;
 use App\Models\User;
 use Modules\Batch\Models\Batch;
 use Modules\Course\Models\Course;
@@ -25,7 +26,7 @@ test('guest is redirected to login for checkout page', function () {
 
 test('authenticated user can view checkout and create pending order', function () {
     $creator = User::factory()->create();
-    $buyer = User::factory()->create();
+    $buyer = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $course = Course::query()->create([
         'title' => 'Checkout Course',
@@ -38,18 +39,18 @@ test('authenticated user can view checkout and create pending order', function (
     ]);
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->get(route('checkout.show', $course))
         ->assertOk()
         ->assertSee('Checkout');
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->post(route('checkout.store', $course))
         ->assertRedirect();
 
     $order = CourseOrder::query()
-        ->where('user_id', $buyer->id)
+        ->where('student_id', $buyer->id)
         ->where('course_id', $course->id)
         ->latest('id')
         ->first();
@@ -59,7 +60,7 @@ test('authenticated user can view checkout and create pending order', function (
     expect((float) $order->amount)->toBe(7000.0);
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->get(route('checkout.success', $order))
         ->assertOk()
         ->assertSee((string) $order->id);
@@ -67,7 +68,7 @@ test('authenticated user can view checkout and create pending order', function (
 
 test('checkout requires selecting an upcoming/running batch when available and creates pending enrollment', function () {
     $creator = User::factory()->create();
-    $buyer = User::factory()->create();
+    $buyer = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $course = Course::query()->create([
         'title' => 'Course With Batches',
@@ -91,18 +92,18 @@ test('checkout requires selecting an upcoming/running batch when available and c
     ]);
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->post(route('checkout.store', $course), [])
         ->assertRedirect()
         ->assertSessionHasErrors(['batch_id']);
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->post(route('checkout.store', $course), ['batch_id' => $batch->id])
         ->assertRedirect();
 
     $order = CourseOrder::query()
-        ->where('user_id', $buyer->id)
+        ->where('student_id', $buyer->id)
         ->where('course_id', $course->id)
         ->latest('id')
         ->first();
@@ -119,7 +120,7 @@ test('checkout requires selecting an upcoming/running batch when available and c
 
 test('student cannot join the same batch again', function () {
     $creator = User::factory()->create();
-    $buyer = User::factory()->create();
+    $buyer = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $course = Course::query()->create([
         'title' => 'No Double Join Course',
@@ -152,7 +153,7 @@ test('student cannot join the same batch again', function () {
     ]);
 
     $this
-        ->actingAs($buyer)
+        ->actingAs($buyer, 'student')
         ->post(route('checkout.store', $course), ['batch_id' => $batch->id])
         ->assertRedirect()
         ->assertSessionHasErrors(['batch_id']);
@@ -160,8 +161,8 @@ test('student cannot join the same batch again', function () {
 
 test('user cannot view another users order success page', function () {
     $creator = User::factory()->create();
-    $buyer = User::factory()->create();
-    $otherUser = User::factory()->create();
+    $buyer = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
+    $otherUser = Student::query()->create(['name' => 'Test Student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password', 'email_verified_at' => now()]);
 
     $course = Course::query()->create([
         'title' => 'Private Order Course',
@@ -173,7 +174,7 @@ test('user cannot view another users order success page', function () {
     ]);
 
     $order = CourseOrder::query()->create([
-        'user_id' => $buyer->id,
+        'student_id' => $buyer->id,
         'course_id' => $course->id,
         'amount' => 8000,
         'currency' => 'BDT',
@@ -181,7 +182,7 @@ test('user cannot view another users order success page', function () {
     ]);
 
     $this
-        ->actingAs($otherUser)
+        ->actingAs($otherUser, 'student')
         ->get(route('checkout.success', $order))
         ->assertForbidden();
 });

@@ -348,7 +348,7 @@ class UserController extends Controller implements HasMiddleware
                 . 'border border-transparent rounded-md font-semibold text-xs '
                 . 'text-white uppercase tracking-widest hover:bg-emerald-500 '
                 . 'focus:outline-none focus:ring-2 focus:ring-emerald-500 '
-                . 'focus:ring-offset-2 transition">Invoices</a>'
+                . 'focus:ring-offset-2 transition">Finance</a>'
                 . '</div>';
         }
 

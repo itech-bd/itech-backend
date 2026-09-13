@@ -4,7 +4,7 @@
             <div>
                 <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">Admin · Finance</p>
                 <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">All Invoices</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">Financial status only: Pending or Completed.</p>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Bills issued to students. Open a pending invoice to record a payment.</p>
             </div>
         </div>
     </x-slot>
@@ -36,6 +36,9 @@
                 {{ $filter['label'] }}
             </a>
         @endforeach
+        <div class="ml-auto shrink-0">
+            @include('payment::partials.finance-link', ['currentPage' => 'invoices'])
+        </div>
     </div>
 
     <div class="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
@@ -46,7 +49,7 @@
             </div>
             <div class="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
                 <i class="fa-solid fa-shield-check"></i>
-                Payment Tracking
+                Billing Records
             </div>
         </div>
         <div id="admin-invoices-table-error" class="mb-4 hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
