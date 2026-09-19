@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Student\StudentProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('api.locale')->group(function (): void {
+    Route::post('auth/home-handoff', [\App\Http\Controllers\Auth\BackendHomeHandoffController::class, 'exchange'])->middleware('throttle:30,1');
     Route::prefix('public')->name('api.v1.public.')->group(function (): void {
         Route::get('bootstrap', [PublicSiteController::class, 'bootstrap'])->name('bootstrap');
         Route::get('home', [PublicSiteController::class, 'home'])->name('home');
@@ -56,6 +57,7 @@ Route::prefix('v1')->middleware('api.locale')->group(function (): void {
 
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::get('me', [AuthController::class, 'me'])->name('me');
+            Route::post('panel-handoff', [AuthController::class, 'panelHandoff'])->middleware('throttle:30,1')->name('panel-handoff');
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::post('logout-all', [AuthController::class, 'logoutAll'])->name('logout-all');
         });

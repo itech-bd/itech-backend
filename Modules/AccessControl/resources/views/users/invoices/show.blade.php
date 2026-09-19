@@ -1,33 +1,32 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="text-xl font-semibold text-slate-900 leading-tight">Invoice #INV-{{ $order->id }}</h2>
                 <p class="mt-1 text-sm text-slate-500">Created {{ optional($order->created_at)->format('d M Y, h:i A') }}</p>
             </div>
-
-            <div class="flex flex-wrap gap-2 print:hidden">
+    </x-slot>
+    <x-slot name="headerActions">
+            <div class="flex flex-wrap items-center gap-2 print:hidden">
                 <a
-                    href="{{ route('users.invoices.index', $student) }}"
-                    class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    href="{{ $backUrl ?? route('users.invoices.index', $student) }}"
+                    class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 >
-                    Back
+                    Back to invoices
                 </a>
                 <a
                     href="{{ route('users.invoices.download', [$student, $order]) }}"
-                    class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 >
                     Download
                 </a>
                 <button
                     type="button"
                     onclick="window.print()"
-                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+                    class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-indigo-700"
                 >
                     Print
                 </button>
             </div>
-        </div>
     </x-slot>
 
     <style>
@@ -42,8 +41,23 @@
         }
     </style>
 
-    <div class="mx-auto max-w-3xl">
-        <div class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 items-start gap-5 xl:grid-cols-5 print:block print:max-w-3xl">
+        @php
+            $received = (float) $order->payments->where('status', 'successful')->sum('amount');
+            $due = $order->status === 'pending' ? max(0, (float) $order->amount - $received) : 0;
+        @endphp
+        <section class="order-1 rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:px-6 xl:col-span-5 print:hidden" aria-label="Payment balance">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <dl class="flex flex-wrap gap-8">
+                    <div><dt class="text-xs font-semibold text-slate-500">Paid</dt><dd class="mt-1 text-lg font-bold text-emerald-700">{{ $order->currency }} {{ number_format($received, 2) }}</dd></div>
+                    <div><dt class="text-xs font-semibold text-slate-500">Due</dt><dd class="mt-1 text-lg font-bold text-amber-700">{{ $order->currency }} {{ number_format($due, 2) }}</dd></div>
+                </dl>
+                @if ($order->status === 'pending')
+                    <a href="{{ route('dashboard.admin.payments.create', $order) }}" class="rounded-xl bg-indigo-700 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-800">Record payment</a>
+                @endif
+            </div>
+        </section>
+        <div class="order-3 min-w-0 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 xl:order-2 xl:col-span-3">
             <div class="border-b border-slate-200 p-6">
                 <div class="mb-6 flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
                     @php
@@ -145,5 +159,27 @@
                 </div>
             </div>
         </div>
+        <section id="payment-history" class="order-2 min-w-0 scroll-mt-32 rounded-xl bg-white p-5 ring-1 ring-slate-200 xl:order-3 xl:col-span-2 print:hidden">
+            <h3 class="text-lg font-bold text-slate-900">Payment history</h3>
+            <p class="mt-1 text-sm text-slate-500">Payments and reversals for this invoice. Dates in {{ config('app.timezone') }}.</p>
+            <div class="mt-5 space-y-4">
+                @forelse ($order->payments as $payment)
+                    @php($isImported = $payment->payment_method === 'legacy')
+                    <article class="break-words rounded-xl border border-slate-200 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="font-bold text-slate-900">#PAY-{{ $payment->id }} &middot; {{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</p>
+                            <span class="rounded-lg px-2.5 py-1 text-xs font-bold {{ $payment->status === 'successful' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ ucfirst($payment->status) }}</span>
+                        </div>
+                        <p class="mt-2 text-sm text-slate-600">{{ $isImported ? 'Previous invoice' : ucfirst(str_replace('_', ' ', $payment->payment_method)) }}@if ($payment->transaction_reference) &middot; Reference: {{ $payment->transaction_reference }}@endif</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $isImported ? 'Estimated payment time' : 'Payment time' }}: {{ $payment->paid_at?->format('d M Y, H:i') ?? 'Unknown' }}</p>
+                        <div class="mt-3 space-y-3 border-l-2 border-slate-200 pl-3 text-xs text-slate-600">
+                            @include('payment::partials.transaction-details')
+                        </div>
+                    </article>
+                @empty
+                    <p class="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">No payments recorded for this invoice.</p>
+                @endforelse
+            </div>
+        </section>
     </div>
 </x-app-layout>

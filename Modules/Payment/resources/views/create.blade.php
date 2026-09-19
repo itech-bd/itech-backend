@@ -20,7 +20,7 @@
             <label class="block">Note<textarea name="note" maxlength="2000" class="mt-1 block w-full rounded-md border-slate-300">{{ old('note') }}</textarea></label>
             <p class="rounded-2xl bg-indigo-50 p-4 text-sm leading-6 text-indigo-900">Confirm receipt of the full invoice amount before recording. This marks the invoice as paid; it does not charge the student.</p>
             <button :disabled="submitting" class="rounded-xl bg-indigo-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50" x-text="submitting ? 'Recording...' : 'Confirm payment'">Confirm payment</button>
-            <a href="{{ route('dashboard.admin.invoices.index') }}" class="ml-3 text-slate-600">Back to invoices</a>
+            <a href="{{ route('dashboard.admin.invoices.show', $order) }}" class="ml-3 text-slate-600">Back to invoice</a>
         </form>
     </div>
 </x-app-layout>

@@ -98,17 +98,13 @@
                         <span>Batches</span>
                     </a>
 
-                    @php $isActive = request()->routeIs('dashboard.admin.invoices.*'); @endphp
+                    @php $isActive = request()->routeIs('dashboard.admin.invoices.*', 'dashboard.admin.payments.*', 'users.invoices.*', 'users.payments.*'); @endphp
                     <a href="/dashboard/admin/invoices" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">
                         <span class="{{ $iconBase }} {{ $isActive ? $iconActive : $iconInactive }}"><i class="fa-solid fa-receipt"></i></span>
                         <span>Invoices</span>
                     </a>
 
-                    @php $isActive = request()->routeIs('dashboard.admin.payments.*', 'users.payments.*'); @endphp
-                    <a href="{{ route('dashboard.admin.payments.index') }}" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">
-                        <span class="{{ $iconBase }} {{ $isActive ? $iconActive : $iconInactive }}"><i class="fa-solid fa-money-bill-transfer"></i></span>
-                        <span>Payments</span>
-                    </a>
+
 
                     @php $isActive = request()->routeIs('dashboard.contact-messages.*'); @endphp
                     <a href="{{ route('dashboard.contact-messages.index') }}" @click="sidebarOpen = false" class="{{ $navItem }} {{ $isActive ? $active : $inactive }}">

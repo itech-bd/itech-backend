@@ -1,0 +1,4 @@
+<div class="flex items-center justify-end gap-2">
+    <a href="{{ route($entity.'.edit', $record) }}" aria-label="Edit {{ $record->name }}" class="inline-flex min-h-9 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</a>
+    <button type="button" data-delete-url="{{ route($entity.'.destroy', $record) }}" data-record-name="{{ $record->name }}" aria-label="Delete {{ $record->name }}" class="js-access-delete inline-flex min-h-9 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-600"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>Delete</button>
+</div>

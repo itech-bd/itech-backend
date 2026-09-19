@@ -32,6 +32,9 @@ Route::get('/login/handoff/{token}', FrontendLoginHandoffController::class)
     ->where('token', '[A-Za-z0-9]+')
     ->name('auth.frontend-login-handoff');
 
+Route::get('/home/handoff', [\App\Http\Controllers\Auth\BackendHomeHandoffController::class, 'create'])
+    ->middleware(['auth:web,student,mentor', 'throttle:30,1'])->name('auth.backend-home-handoff');
+
 Route::middleware('frontend.locale')->group(
     function () {
         Route::get('/', [SiteController::class, 'home'])->name('home');

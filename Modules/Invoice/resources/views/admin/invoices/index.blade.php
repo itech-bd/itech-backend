@@ -4,7 +4,7 @@
             <div>
                 <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#2E3192]/70">Admin · Finance</p>
                 <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">All Invoices</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">Bills issued to students. Open a pending invoice to record a payment.</p>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Track balances, record payments and review each invoice's payment history.</p>
             </div>
         </div>
     </x-slot>
@@ -16,10 +16,31 @@
     @php
         $filters = [
             '' => ['label' => 'All', 'icon' => 'fa-solid fa-layer-group'],
-            'pending' => ['label' => 'Pending', 'icon' => 'fa-solid fa-clock'],
-            'completed' => ['label' => 'Completed', 'icon' => 'fa-solid fa-circle-check'],
+            'pending' => ['label' => 'Due', 'icon' => 'fa-solid fa-clock'],
+            'completed' => ['label' => 'Paid', 'icon' => 'fa-solid fa-circle-check'],
         ];
     @endphp
+
+    <dl aria-label="All invoices summary" class="mb-5 grid gap-4 sm:grid-cols-3">
+        @foreach (['received' => 'Total received', 'due' => 'Outstanding balance'] as $field => $label)
+            <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+                <dt class="text-sm font-semibold text-slate-500">{{ $label }}</dt>
+                <dd class="mt-2 space-y-1 text-xl font-extrabold {{ $field === 'received' ? 'text-emerald-700' : 'text-amber-700' }}">
+                    @forelse ($summary as $balance)
+                        <span class="block"><span class="text-sm">{{ $balance->currency }}</span> {{ number_format((float) $balance->$field, 2) }}</span>
+                    @empty
+                        <span>0.00</span>
+                    @endforelse
+                </dd>
+                <dd class="mt-2 text-xs text-slate-500">All invoices, across all pages and filters</dd>
+            </div>
+        @endforeach
+        <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+            <dt class="text-sm font-semibold text-slate-500">Invoices awaiting payment</dt>
+            <dd class="mt-2 text-xl font-extrabold text-slate-900">{{ number_format($summary->sum('pending_count')) }}</dd>
+            <dd class="mt-2"><a href="{{ route('dashboard.admin.invoices.index', ['status' => 'pending']) }}" class="text-xs font-semibold text-indigo-700">View due invoices &rarr;</a></dd>
+        </div>
+    </dl>
 
     <div class="mb-5 flex flex-wrap items-center gap-2 rounded-3xl bg-white p-2 shadow-sm ring-1 ring-slate-200/70">
         @foreach ($filters as $value => $filter)
@@ -65,6 +86,8 @@
                         <th class="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Batch</th>
                         <th class="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Status</th>
                         <th class="px-4 py-3 text-right text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Total</th>
+                        <th class="px-4 py-3 text-right text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Paid</th>
+                        <th class="px-4 py-3 text-right text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Due</th>
                         <th class="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Date</th>
                         <th class="px-4 py-3 text-right text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Actions</th>
                     </tr>
@@ -105,6 +128,8 @@
                             { data: 'batch', name: 'batch', orderable: false },
                             { data: 'status', name: 'status', orderable: false, searchable: false },
                             { data: 'total', name: 'total', orderable: false, searchable: false, className: 'text-right' },
+                            { data: 'received', name: 'received', orderable: false, searchable: false, className: 'text-right' },
+                            { data: 'due', name: 'due', orderable: false, searchable: false, className: 'text-right' },
                             { data: 'date', name: 'date', orderable: false, searchable: false },
                             { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-right' },
                         ],

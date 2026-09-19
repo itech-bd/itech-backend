@@ -20,7 +20,7 @@ it('records one full payment and keeps retries idempotent', function () {
     $url = route('dashboard.admin.payments.store', $this->order);
     $this->actingAs($this->admin)->get(route('dashboard.admin.payments.create', $this->order))->assertOk();
     for ($i = 0; $i < 2; $i++) {
-        $this->post($url, ['payment_method' => 'manual', 'transaction_reference' => 'REF-1', 'amount' => 1])->assertRedirect()->assertSessionHasNoErrors();
+        $this->post($url, ['payment_method' => 'manual', 'transaction_reference' => 'REF-1', 'amount' => 1])->assertRedirect(route('dashboard.admin.invoices.show', $this->order))->assertSessionHasNoErrors();
     }
     expect($this->order->refresh()->status)->toBe('paid');
     $this->assertDatabaseCount('payments', 1);
@@ -124,10 +124,79 @@ it('validates domain calls and avoids offering payment entry on paid invoices', 
     $payment = app(RecordPayment::class)->record($this->order, $this->admin->id);
     expect(fn () => app(RecordPayment::class)->reverse($payment, $this->admin->id, '   '))->toThrow(\Illuminate\Validation\ValidationException::class);
     expect($payment->fresh()->status)->toBe('successful');
-    $this->actingAs($this->admin)->get(route('dashboard.admin.payments.create', $this->order))->assertRedirect(route('users.payments.index', $this->student));
+    $this->actingAs($this->admin)->get(route('dashboard.admin.payments.create', $this->order))->assertRedirect(route('dashboard.admin.invoices.show', $this->order));
+});
+
+it('shows invoice-specific history and retains reversed payments without counting them as received', function () {
+    $service = app(RecordPayment::class);
+    $payment = $service->record($this->order, $this->admin->id, ['transaction_reference' => 'FIRST-PAYMENT']);
+    $service->reverse($payment, $this->admin->id, 'Incorrect reference');
+    $service->record($this->order, $this->admin->id, ['transaction_reference' => 'REPLACEMENT-PAYMENT']);
+    $other = CourseOrder::query()->create(['student_id' => $this->student->id, 'course_id' => $this->order->course_id, 'amount' => 10, 'currency' => 'USD', 'status' => 'pending']);
+    $service->record($other, $this->admin->id, ['transaction_reference' => 'OTHER-INVOICE-PAYMENT']);
+
+    $this->actingAs($this->admin)->get(route('dashboard.admin.invoices.show', $this->order))
+        ->assertOk()->assertSee('Payment history')->assertSee('FIRST-PAYMENT')->assertSee('REPLACEMENT-PAYMENT')
+        ->assertSee('Incorrect reference')->assertDontSee('OTHER-INVOICE-PAYMENT')->assertDontSee('Record payment');
+    $this->get(route('users.invoices.show', [$this->student, $this->order]))->assertOk()->assertSee('REPLACEMENT-PAYMENT');
+    $this->get(route('dashboard.admin.invoices.index'))->assertOk()
+        ->assertViewHas('summary', fn ($rows) => $rows->count() === 2 && (float) $rows->firstWhere('currency', 'BDT')->received === 500.0 && (float) $rows->firstWhere('currency', 'USD')->received === 10.0);
+    $this->getJson('/dashboard/admin/invoices?draw=1&start=0&length=10')->assertOk()
+        ->assertJsonFragment(['received' => 'BDT 500.00', 'due' => 'BDT 0.00']);
+
+    $this->actingAs(User::factory()->create())->get(route('dashboard.admin.invoices.show', $this->order))->assertForbidden();
+});
+
+it('shows a reversed invoice as due in the finance summary and invoice details', function () {
+    $service = app(RecordPayment::class);
+    $payment = $service->record($this->order, $this->admin->id);
+    $service->reverse($payment, $this->admin->id, 'Duplicate entry');
+    $this->actingAs($this->admin)->get(route('dashboard.admin.invoices.index'))->assertOk()
+        ->assertViewHas('summary', fn ($rows) => (float) $rows->first()->received === 0.0 && (float) $rows->first()->due === 500.0 && (int) $rows->first()->pending_count === 1);
+    $this->get(route('dashboard.admin.invoices.show', $this->order))->assertOk()->assertSee('Record payment')->assertSee('Duplicate entry');
+    $this->getJson('/dashboard/admin/invoices?draw=1&start=0&length=10')->assertOk()
+        ->assertJsonFragment(['received' => 'BDT 0.00', 'due' => 'BDT 500.00']);
 });
 
 it('enforces the successful payment slot at database level', function () {
     $payment = app(RecordPayment::class)->record($this->order, $this->admin->id);
     expect(fn () => $payment->replicate()->save())->toThrow(\Illuminate\Database\QueryException::class);
+});
+
+it('exports and prints all filtered transactions using the same student scope beyond pagination', function () {
+    for ($i = 1; $i <= 26; $i++) {
+        $order = CourseOrder::query()->create(['student_id' => $this->student->id, 'course_id' => $this->order->course_id, 'amount' => 10, 'currency' => 'BDT', 'status' => 'pending']);
+        app(RecordPayment::class)->record($order, $this->admin->id, ['payment_method' => 'cash', 'transaction_reference' => 'REPORT-'.$i]);
+    }
+    app(RecordPayment::class)->record($this->order, $this->admin->id, ['payment_method' => 'card', 'transaction_reference' => 'EXCLUDED-CARD']);
+    $url = route('users.payments.index', $this->student).'?payment_method=cash';
+    $this->actingAs($this->admin)->get($url)->assertOk()->assertViewHas('transactionCount', 26)
+        ->assertViewHas('payments', fn ($rows) => $rows->count() === 25)->assertDontSee('Reverse payment')->assertDontSee('Record a payment');
+    $csv = $this->get($url.'&output=csv&page=2')->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8')->streamedContent();
+    expect(substr_count($csv, '#PAY-'))->toBe(26);
+    expect($csv)->toContain('REPORT-1')->toContain('REPORT-26')->not->toContain('EXCLUDED-CARD');
+    $this->get($url.'&output=print&page=2')->assertOk()->assertSee('REPORT-1')->assertSee('REPORT-26')->assertSee('260.00')->assertDontSee('EXCLUDED-CARD');
+
+    $other = Student::query()->create(['name' => 'Other report student', 'email' => fake()->unique()->safeEmail(), 'password' => 'password']);
+    $otherUrl = route('users.payments.index', $other).'?search=REPORT';
+    expect($this->get($otherUrl.'&output=csv')->assertOk()->streamedContent())->not->toContain('#PAY-');
+    $this->get($otherUrl.'&output=print')->assertOk()->assertSee('No payments found.');
+    $this->actingAs(User::factory()->create())->get($url.'&output=csv')->assertForbidden();
+    $this->get($url.'&output=print')->assertForbidden();
+});
+
+it('exports safe spreadsheet text and identifies historical estimates and reversals', function () {
+    $this->student->update(['name' => '=1+1']);
+    $this->order->update(['status' => 'paid']);
+    $migration = require base_path('Modules/Payment/database/migrations/2026_09_13_000002_backfill_legacy_payments.php');
+    $migration->up();
+    $payment = $this->order->payments()->firstOrFail();
+    app(RecordPayment::class)->reverse($payment, $this->admin->id, 'Correction');
+    $this->actingAs($this->admin);
+    $csv = $this->get('/dashboard/admin/payments?status=reversed&output=csv')->assertOk()->streamedContent();
+    expect($csv)->toContain("'=1+1")->toContain('Estimated')->toContain('Previous invoice')->toContain('reversed');
+    $this->get('/dashboard/admin/payments?status=reversed&output=print')->assertOk()
+        ->assertSee('Estimated payment time')->assertViewHas('summary', fn ($rows) => $rows->where('status', 'successful')->isEmpty());
+    $this->get('/dashboard/admin/payments?output=csv&from=2026-02-02&to=2026-02-01')->assertSessionHasErrors('to');
+    $this->get('/dashboard/admin/payments?output=invalid')->assertSessionHasErrors('output');
 });

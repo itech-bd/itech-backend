@@ -246,6 +246,9 @@ class UserController extends Controller implements HasMiddleware
 
         $order->loadMissing(
             [
+                'payments' => fn ($query) => $query->latest('id'),
+                'payments.recordedBy',
+                'payments.reversedBy',
                 'course',
                 'batch',
                 'user:id,name,email',

@@ -181,7 +181,7 @@
 
             $logoPath = $frontendSettings['site_logo_path'] ?? null;
             $logoUrl = $logoPath ? asset('storage/' . ltrim((string) $logoPath, '/')) : asset('brand/itechbd-logo.png');
-            $frontendHomeUrl = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/en';
+            $frontendHomeUrl = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/auth/backend?locale=' . (app()->getLocale() === 'bn' ? 'bn' : 'en');
         @endphp
 
         <div x-data="{ sidebarOpen: false }" class="backend-shell min-h-screen">

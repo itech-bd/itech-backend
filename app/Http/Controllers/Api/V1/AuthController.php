@@ -107,6 +107,7 @@ class AuthController extends ApiController
         }
 
         if ($request->hasSession() && $guard !== 'student') {
+            Accounts::logoutAllGuards();
             Auth::guard($guard)->login($user);
             Auth::shouldUse($guard);
             $request->session()->regenerate();
@@ -144,6 +145,14 @@ class AuthController extends ApiController
         }
 
         return $this->success($this->userPayload($user, true));
+    }
+
+    public function panelHandoff(Request $request): JsonResponse
+    {
+        $url = $this->loginHandoffUrl($request->user());
+        abort_unless($url, 403);
+
+        return $this->success(['login_handoff_url' => $url]);
     }
 
     public function logout(Request $request): JsonResponse
@@ -301,7 +310,7 @@ class AuthController extends ApiController
             'id' => $user->getAuthIdentifier(),
         ], now()->addMinutes(2));
 
-        return route('auth.frontend-login-handoff', ['token' => $token]);
+        return rtrim(config('app.url'), '/').route('auth.frontend-login-handoff', ['token' => $token], false);
     }
 
     private function loginHandoffCacheKey(string $token): string

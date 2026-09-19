@@ -38,7 +38,7 @@ class AuthenticatedSessionController extends Controller
             $courseIdForCheckout = (string) $m[1];
         }
 
-        if ($intendedPath !== '' && (Str::startsWith($intendedPath, ['/admin', '/dashboard']))) {
+        if ($intendedPath !== '' && (Str::startsWith($intendedPath, ['/admin', '/dashboard', '/home/handoff']))) {
             return view('auth.login');
         }
 

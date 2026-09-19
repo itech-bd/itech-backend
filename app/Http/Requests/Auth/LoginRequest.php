@@ -125,6 +125,7 @@ class LoginRequest extends FormRequest
             throw $exception;
         }
 
+        Accounts::logoutAllGuards();
         Auth::guard($guard)->login($user, $remember);
         Auth::shouldUse($guard);
 

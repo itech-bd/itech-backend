@@ -30,6 +30,7 @@ $adminInvoiceRoutes = static function () use (
     $adminInvoicesUpdateStatusAction
 ): void {
     Route::get('invoices', $adminInvoicesIndexAction)->name('invoices.index');
+    Route::get('invoices/{order}', [AdminInvoicesController::class, 'show'])->name('invoices.show');
     Route::get('invoices/{order}/download', $adminInvoicesDownloadAction)
         ->name('invoices.download');
     Route::patch('invoices/{order}', $adminInvoicesUpdateStatusAction)

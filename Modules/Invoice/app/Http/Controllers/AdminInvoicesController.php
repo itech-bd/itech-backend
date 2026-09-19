@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Modules\Course\Models\CourseOrder;
 use Modules\Invoice\Support\InvoicePdf;
 use Yajra\DataTables\Facades\DataTables;
@@ -44,10 +45,17 @@ class AdminInvoicesController extends Controller
         $allowed = ['pending', 'completed'];
         $activeStatus = in_array($status, $allowed, true) ? $status : null;
 
+        $balances = CourseOrder::query()->whereIn('status', ['pending', 'paid'])
+            ->withSum(['payments as received' => fn ($query) => $query->where('status', 'successful')], 'amount');
+        $summary = DB::query()->fromSub($balances, 'balances')
+            ->selectRaw('currency, SUM(COALESCE(received, 0)) as received, SUM(CASE WHEN status = ? THEN amount - COALESCE(received, 0) ELSE 0 END) as due, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count', ['pending', 'pending'])
+            ->groupBy('currency')->orderBy('currency')->get();
+
         return view(
             'invoice::admin.invoices.index',
             [
                 'activeStatus' => $activeStatus,
+                'summary' => $summary,
             ]
         );
     }
@@ -68,6 +76,7 @@ class AdminInvoicesController extends Controller
         $ordersQuery = CourseOrder::query()
             ->with(['user:id,name,email', 'course:id,title', 'batch:id,name'])
             ->select(['course_orders.*'])
+            ->withSum(['payments as received' => fn ($query) => $query->where('status', 'successful')], 'amount')
             ->whereIn('status', ['pending', 'paid'])
             ->orderByDesc('id');
 
@@ -106,6 +115,14 @@ class AdminInvoicesController extends Controller
                 fn (CourseOrder $order) => e($order->currency)
                     . ' '
                     . number_format((float) $order->amount, 2)
+            )
+            ->addColumn(
+                'received',
+                fn (CourseOrder $order) => e($order->currency).' '.number_format((float) $order->received, 2)
+            )
+            ->addColumn(
+                'due',
+                fn (CourseOrder $order) => e($order->currency).' '.number_format($order->status === 'pending' ? max(0, (float) $order->amount - (float) $order->received) : 0, 2)
             )
             ->addColumn(
                 'date',
@@ -203,7 +220,7 @@ class AdminInvoicesController extends Controller
     private function _renderStatusBadge(CourseOrder $order): string
     {
         $isCompleted = $order->status === 'paid';
-        $label = $isCompleted ? 'Completed' : 'Pending';
+        $label = $isCompleted ? 'Paid' : 'Due';
         $badge = $isCompleted
             ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
             : 'bg-amber-50 text-amber-700 ring-amber-200';
@@ -225,15 +242,25 @@ class AdminInvoicesController extends Controller
      */
     private function _renderActions(CourseOrder $order): string
     {
-        $download = route('dashboard.admin.invoices.download', $order);
-        $action = $order->status === 'paid'
-            ? route('users.payments.index', $order->student_id)
-            : route('dashboard.admin.payments.create', $order);
-        $label = $order->status === 'paid' ? 'View payments' : 'Record payment';
+        $html = '<div class="flex items-center justify-end gap-2">'
+            . '<a href="'.e(route('dashboard.admin.invoices.show', $order)).'" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">View invoice</a>';
+        if ($order->status === 'pending') {
+            $html .= '<a href="'.e(route('dashboard.admin.payments.create', $order)).'" class="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">Record payment</a>';
+        }
 
-        return '<div class="flex items-center justify-end gap-2">'
-            . '<a href="'.e($download).'" class="rounded-md border px-3 py-2 text-xs font-semibold">Download PDF</a>'
-            . '<a href="'.e($action).'" class="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">'.e($label).'</a></div>';
+        return $html.'</div>';
+    }
+
+    public function show(CourseOrder $order): View
+    {
+        $order->load(['student', 'course', 'batch', 'payments' => fn ($query) => $query->latest('id'), 'payments.recordedBy', 'payments.reversedBy']);
+        abort_unless($order->student, 404);
+
+        return view('accesscontrol::users.invoices.show', [
+            'order' => $order,
+            'student' => $order->student,
+            'backUrl' => route('dashboard.admin.invoices.index'),
+        ]);
     }
 
     public function download(CourseOrder $order)
@@ -273,7 +300,7 @@ class AdminInvoicesController extends Controller
 
         if ($request->input('status') === 'pending') {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'status' => 'Reverse the payment from Payments with a reason to return an invoice to pending.',
+                'status' => 'Open the invoice and reverse its payment with a reason to return it to pending.',
             ]);
         }
         app(\Modules\Payment\Services\RecordPayment::class)->record($order, $request->user()->id);

@@ -22,47 +22,24 @@ class RoleController extends Controller implements HasMiddleware
     public function index()
     {
         if (request()->ajax() && request()->has('draw')) {
-            $query = Role::query()
-                ->with(['permissions:id,name'])
-                ->select(['id', 'name']);
+            $query = Role::query()->select(['id', 'name'])->with('permissions:id,name');
 
             return DataTables::eloquent($query)
                 ->addIndexColumn()
-                ->addColumn('permissions', function (Role $role) {
-                    if ($role->permissions->isEmpty()) {
-                        return '<span class="text-sm text-gray-500">-</span>';
-                    }
-
-                    return $role->permissions
-                        ->sortBy('name')
-                        ->map(fn (Permission $permission) =>
-                            '<span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">'
-                            . e($permission->name)
-                            . '</span>'
-                        )
-                        ->implode(' ');
-                })
-                ->addColumn('actions', function (Role $role) {
-                    $editUrl = route('roles.edit', $role);
-                    $deleteUrl = route('roles.destroy', $role);
-
-                    return
-                        '<div class="inline-flex items-center gap-2">'
-                        . '<a href="' . e($editUrl) . '" class="inline-flex items-center px-3 py-1.5 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition">Edit</a>'
-                        . '<button type="button"'
-                        . ' class="js-role-delete inline-flex items-center px-3 py-1.5 bg-red-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition"'
-                        . ' data-delete-url="' . e($deleteUrl) . '"'
-                        . ' data-role-name="' . e($role->name) . '"'
-                        . '>Delete</button>'
-                        . '</div>';
-                })
-                ->rawColumns(['permissions', 'actions'])
+                ->addColumn('access', fn (Role $record) => view('accesscontrol::shared.access-preview', ['items' => $record->permissions, 'label' => 'permissions'])->render())
+                ->addColumn('actions', fn (Role $record) => view('accesscontrol::shared.actions', ['record' => $record, 'entity' => 'roles'])->render())
+                ->rawColumns(['access', 'actions'])
                 ->toJson();
         }
 
-        return view('accesscontrol::roles.index');
-    }
+        $stats = [
+            'roles' => \Spatie\Permission\Models\Role::count(),
+            'permissions' => Permission::count(),
+            'unassigned' => Permission::doesntHave('roles')->count(),
+        ];
 
+        return view('accesscontrol::roles.index', compact('stats'));
+    }
     public function create()
     {
         $permissions = Permission::orderBy('name')->get();

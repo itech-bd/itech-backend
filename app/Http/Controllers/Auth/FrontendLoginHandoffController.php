@@ -16,7 +16,8 @@ class FrontendLoginHandoffController extends Controller
 {
     public function __invoke(Request $request, string $token): RedirectResponse
     {
-        $payload = Cache::pull($this->cacheKey($token));
+        $key = $this->cacheKey($token);
+        $payload = Cache::lock($key.':lock', 5)->get(fn () => Cache::pull($key));
         abort_unless($payload, 404);
 
         $guard = is_array($payload) ? (string) ($payload['guard'] ?? 'web') : 'web';
@@ -31,6 +32,7 @@ class FrontendLoginHandoffController extends Controller
         $user = $model::query()->find($userId);
         abort_unless($user, 404);
 
+        Accounts::logoutAllGuards();
         Auth::guard($guard)->login($user);
         Auth::shouldUse($guard);
         $request->session()->regenerate();
@@ -40,7 +42,8 @@ class FrontendLoginHandoffController extends Controller
                 ->with('status', 'must-change-password');
         }
 
-        return redirect()->to(route('dashboard', absolute: false));
+        return redirect()->to(route('dashboard', absolute: false))
+            ->withHeaders(['Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer']);
     }
 
     private function cacheKey(string $token): string
